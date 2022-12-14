@@ -7,7 +7,7 @@ import java.util.UUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
-public class LoaderTest {
+public class DBMTest {
 
     @Test
     public void load() {

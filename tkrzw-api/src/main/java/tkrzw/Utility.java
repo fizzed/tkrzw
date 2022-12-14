@@ -15,29 +15,11 @@ package tkrzw;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Library utilities.
  */
 public class Utility {
-  /** The flag whether loaded. */
-  static private AtomicBoolean loaded = new AtomicBoolean();
-
-  /**
-   * Load the native library.
-   */
-  static void loadLibrary() {
-    if (loaded.get()) return;
-    synchronized (Utility.class) {
-      if (!loaded.get()) {
-        loaded.set(true);
-        com.fizzed.jne.JNE.loadLibrary("tkrzw");
-        com.fizzed.jne.JNE.loadLibrary("jtkrzw");
-      }
-    }
-  }
-
   static {
     loadLibrary();
   }
@@ -48,6 +30,15 @@ public class Utility {
   static final String OS_NAME = getOSName();
   /** The size of a memory page on the OS. */
   static final int PAGE_SIZE = getPageSize();
+
+  /**
+   * Load the native library.
+   */
+  static synchronized void loadLibrary() {
+    if(loaded) return;
+    CustomLoader.loadLibrary();
+    loaded = true;
+  }
 
   /**
    * Gets the package version numbers.
@@ -119,6 +110,8 @@ public class Utility {
    */
   public static native int editDistanceLev(String a, String b);
 
+  /** The flag whether loaded. */
+  static private boolean loaded = false;
 }
 
 // END OF FILE
