@@ -17,8 +17,8 @@
     </properties>
 
     <scm>
-        <url>https://github.com/fizzed/tokyocabinet</url>
-        <connection>scm:git:git@github.com:fizzed/tokyocabinet.git</connection>
+        <url>https://github.com/fizzed/tkrzw</url>
+        <connection>scm:git:git@github.com:fizzed/tkrzw.git</connection>
       <tag>HEAD</tag>
   </scm>
 
