@@ -26,11 +26,6 @@ export LIBRARY_PATH="$LIBRARY_PATH:$TZDIR"
 # this helps alpine linux build
 export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$TZDIR"
 
-if [ $(uname -s) = "Darwin" ]; then
-  # we just need to fix the JAVA_HOME on macos to get the java version to compile
-  export JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-11.jdk/Contents/Home
-fi
-
 cd ../tkrzw-java
 ./configure || exit 1
 
