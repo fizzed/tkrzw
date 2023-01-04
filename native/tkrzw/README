@@ -1,0 +1,39 @@
+================================================================
+ Tkrzw: a set of implementations of DBM
+================================================================
+
+Please read the following documents.
+
+  COPYING           - license
+  CONTRIBUTING.md   - how to contribute
+  doc/index.xhtml   - main document
+    (the same as https://dbmx.net/tkrzw/)
+
+Contents of the directory tree are below.
+
+  ./              - source code
+  ./example/      - sample code for tutorial
+
+Tkrzw is available on UNIX-like systems (Linux, Mac OS, Solaris etc)
+and Windows.
+
+On Unix-like systems, GCC 7.3 or later version is required to build
+the library.  GNU make and other standard tools are also required.
+Then, run these commands.  The files are installed under "/usr/local".
+
+  ./configure --enable-opt-native --enable-most-features
+  make
+  make check
+  sudo make install
+
+On Windows, Visual Studio 2019 and its C++ components are required.
+Open the "x86 Native Tools Command Prompt" and then run the following
+commands.  The files are installed under "C:\Program Files\tkrzw".
+
+  nmake -f VCMakefile
+  nmake -f VCMakefile check
+  nmake -f VCMakefile install    (run this as Administrator)
+
+Thanks.
+
+== END OF FILE ==

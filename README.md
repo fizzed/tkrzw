@@ -10,6 +10,12 @@ times.
 Linux x64 native libs are compiled on Ubuntu 18.04, so you can be assured they'll work well on various flavors of linux
 going back several years in time.
 
+## Compression
+
+zlib is enabled, zstd/lzma/lz4 are not enabled since those dependencies are not very common in many environments and
+would prevent the library from loading in Java.
+
+
 ```xml
 <dependency>
   <groupId>com.fizzed</groupId>
@@ -17,3 +23,6 @@ going back several years in time.
   <version>VERSION-HERE</version>
 </dependency>
 ```
+
+You can use an Ubuntu x86_64 host to test a wide variety of hardware architectures and operating systems. For more
+information on how this works, please visit https://github.com/fizzed/blaze-buildx#multiple-architecture-containers

@@ -1,0 +1,74 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.fizzed</groupId>
+    <artifactId>tkrzw-bom</artifactId>
+    <name>tkrzw-bom</name>
+    <packaging>pom</packaging>
+    
+    <parent>
+        <groupId>com.fizzed</groupId>
+        <artifactId>tkrzw</artifactId>
+        <version>0.0.3-SNAPSHOT</version>
+    </parent>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-linux-x64</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-linux-arm64</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-linux_musl-x64</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-linux_musl-arm64</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-linux-riscv64</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-macos-x64</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-macos-arm64</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-all-natives</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+    
+</project>

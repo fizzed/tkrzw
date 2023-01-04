@@ -1,0 +1,635 @@
+2022-03-26 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.24
+	- Library version: 1.67.0
+
+	- Fix compilation errors on FreeBSD.
+	- GetLocalTimeDifference has the use_cache parameter.
+
+2022-02-17 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.23
+	- Library version: 1.66.0
+
+	- The C interfaces catches possible exceptions inside.
+
+2022-01-12 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.22
+	- Library version: 1.65.0
+
+	- TreeDBM::TuningParameters has page_update_mode.
+
+2021-12-01 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.21
+	- Library version: 1.64.0
+
+	- Add tkrzw_dbm_check method.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.28
+	- tkrzw-python: 0.1.28
+	- tkrzw-ruby: 0.1.28
+	- tkrzw-go: 0.1.28
+
+2021-11-01 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.20
+	- Library version: 1.63.0
+
+	- Improve efficiency of CompareExchange.
+	- compare_exchange_and_get is added.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.27
+	- tkrzw-python: 0.1.27
+	- tkrzw-ruby: 0.1.27
+	- tkrzw-go: 0.1.27
+
+2021-10-20 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.19
+	- Library version: 1.62.0
+
+	- Fix compilation errors with older GooleTest libraries.
+	- Support DBM::ANY_DATA as the parameters of CompareExchange.
+	- The found parameter is added to CompareExchange.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.26
+	- tkrzw-python: 0.1.26
+	- tkrzw-ruby: 0.1.26
+	- tkrzw-go: 0.1.26
+
+2021-10-12 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.18
+	- Library version: 1.61.0
+
+	- Add SignalBroker and SlottedSignalBroker.
+	- Iterator::Set and Iterator::Remove take pointers to store the old value.
+	- Add Iterator::Step.
+	- Add DBM::PopFirst and DBM::PushLast.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.25
+	- tkrzw-python: 0.1.25
+	- tkrzw-ruby: 0.1.25
+	- tkrzw-go: 0.1.25
+
+2021-10-06 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.17
+	- Library version: 1.60.0
+
+	- Fix a bug of MemoryMapFile::Truncate.
+	- Abolish File::LockMemory and --lock_mem_buckets parameter of HashDBM.
+	- Fix bugs in AsyncDBM::Synchronize and AsyncDBM::Rebuild.
+
+2021-10-01  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.16
+	- Library version: 1.59.0
+
+	- MakeRelativeTimeExpr is added.
+
+2021-09-29  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.15
+	- Library version: 1.58.0
+
+	- MessageQueue::Reader::Wait is added.
+
+2021-09-23  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.14
+	- Library version: 1.57.0
+
+	- tkrzw_ulog_util command is added.
+	- MessageQueue::UpdateTimestamp is added.
+	- MessageQueue::OverwriteThreadServerID is added.
+	- DBM::GetUpdateLogger is added.
+
+2021-09-20  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.13
+	- Library version: 1.56.0
+
+	- MessageQueue uses PositionalParallelFile.
+	- MessageQueue supports auto restoration.
+	- PositionalParallelFile supports disabling preliminary allocation.
+
+2021-09-20  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.12
+	- Library version: 1.55.0
+
+	- File::OPEN_SYNC_HARD is added.
+	- On-memory databases uses File::OPEN_SYNC_HARD for exporting records.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.23
+	- tkrzw-python: 0.1.23
+	- tkrzw-ruby: 0.1.23
+	- tkrzw-go: 0.1.23
+
+2021-09-18  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.11
+	- Library version: 1.54.0
+
+	- Fix overflow bugs on 32-bit systems.
+	- Fix memory leak bug in MemoryMapFile::Synchronize.
+	- GetModificationTime is renamed to GetTimestamp.
+	- PolyDBM supports parameters to enable update logging.
+	- FlatRecord supports the data type selection for metadata.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.22
+	- tkrzw-python: 0.1.22
+	- tkrzw-ruby: 0.1.22
+	- tkrzw-go: 0.1.22
+
+2021-09-10  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.10
+	- Library version: 1.53.0
+
+	- Add features for update logging.
+	- File::IsOpen is added.
+	- Add the message queue class.
+
+2021-09-08  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.9
+	- Library version: 1.52.0
+
+	- Fix a potential race condition of TreeDBM::Rebuild.
+
+2021-09-06  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.8
+	- Library version: 1.51.0
+
+	- Add RESTORE_NO_SHORTCUTS and RESTORE_WITH_HARDSYNC to the restore options.
+
+2021-08-31  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.7
+	- Library version: 1.50.0
+
+	- CopyFileData supports sync_hard option.
+	- tkrzw_dbm_util supports --multi flag.
+	- Fix compilation errors on Windows.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.21
+	- tkrzw-python: 0.1.21
+	- tkrzw-ruby: 0.1.21
+	- tkrzw-go: 0.1.21
+
+2021-08-27  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.6
+	- Library version: 1.49.0
+
+	- PolyDBM::RebuildAdvanced supports skip_broken_records and sync_hard parameters.
+	- Extra metadata and time are printed by tkrzw_dbm_util.
+	- The inspect subcommand of tkrzw_dbm_util supports a filter.
+	- Remove useless virtual modifiers.
+
+2021-08-26  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.5
+	- Library version: 1.48.0
+
+	- GetInternalFile is added to TinyDBM, BabyDBM, StdHashDBM, and StdTreeDBM.
+	- TreeDBM::Rebuild has the restore parameter.
+
+2021-08-25  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.4
+	- Library version: 1.47.0
+
+	- Clean up Makefile.
+	- HashDBM::Synchrhonize syncs the record metadata section properly.
+	- TinyDBM, BabyDBM, StdHashDBM, and StdTreeDBM exports data atomically.
+	- Guard pwrite, pread, ftruncate against EINTR.
+
+2021-08-23  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.3
+	- Library version: 1.46.0
+
+	- Add time utilities.
+
+2021-08-19  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.2
+	- Library version: 1.45.0
+
+	- Tune parameters for HashDBM for better concurrency.
+	- Tune parameters for TreeDBM for better concurrency.
+	- NETWORK_ERROR is added to the Status codes.
+	- Fix a bug of SearchMap.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.20
+	- tkrzw-python: 0.1.20
+	- tkrzw-ruby: 0.1.20
+	- tkrzw-go: 0.1.20
+
+2021-08-16  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.1
+	- Library version: 1.44.0
+
+	- Use xmallocaligned uses posix_memalign on POSIX systems.
+	- Optimize MemoryMapParallelFile and MemoryMapAtomicFile to reduce malloc calls.
+	- Fix a bug of TruncateFakely when increasing the file size.
+	- Optimize tkrzw_dbm_perf to check memory allocation accurately.
+	- Add methods to FileIndex.
+
+2021-08-09  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.0
+	- Library version: 1.43.0
+
+	- Refactoring.
+
+2021-08-08  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.52
+	- Library version: 1.41.0
+
+	- Rebuild is guarded by try lock.
+	- FreeBlockPool is guarded by SpinMutex.
+
+2021-08-07  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.51
+	- Library version: 1.39.0
+
+	- Refactoring.
+
+2021-08-02  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.50
+	- Library version: 1.39.0
+
+	- tkrzw_thread_util becomes a template library.
+	- Use spin lock mutexes for performance.
+
+2021-07-28  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.49
+	- Library version: 1.38.0
+
+	- Add exporting methods to the asynchronous API.
+	- Rename some exporting methods.
+	- Add GetTypeExtra to StatusFeature.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.17
+	- tkrzw-python: 0.1.17
+	- tkrzw-ruby: 0.1.17
+	- tkrzw-go: 0.1.5
+
+2021-07-26  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.48
+	- Library version: 1.37.0
+
+	- Add StatusFuture class for the asynchronous API.
+	- Add asynchronous API to the C interface.
+
+2021-07-25  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.47
+	- Library version: 1.36.0
+
+	- Fix compilation warnings on Mac.
+	- Add TKRZW_PAGE_SIZE constant to the C interface.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.16
+	- tkrzw-python: 0.1.16
+	- tkrzw-ruby: 0.1.16
+	- tkrzw-go: 0.1.2
+
+2021-07-23  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.46
+	- Library version: 1.35.0
+
+	- Fix a bug of RestoreDatabase on systems with the page size more than 4096, like M1 Mac.
+	- Add string utilities to the C interface.
+
+2021-07-17  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.45
+	- Library version: 1.34.0
+
+	- AsyncDBM supports callback functions.
+
+2021-07-15  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.44
+	- Library version: 1.33.0
+
+	- tkrzw_dbm_tran supports asynchronous operations.
+
+2021-07-13  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.43
+	- Library version: 1.32.0
+
+	- Add SearchDBMOrder method.
+	- Add AsyncDBM class.
+	- Add AppendMulti method.
+	- Modify signature of GetMulti method.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.14
+	- tkrzw-python: 0.1.14
+	- tkrzw-ruby: 0.1.14
+
+2021-07-11  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.42
+	- Library version: 1.31.0
+
+	- Exporting functions are added to the C language interface.
+	- Fix a compilation error on Windows.
+
+2021-07-09  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.41
+	- Library version: 1.30.0
+
+	- Fix a bug of memory corruption of tkrzw_dbm_tran.
+	- Fix a metadata inconsistency of TreeDBM.
+
+2021-07-08  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.40
+	- Library version: 1.29.0
+
+	- Add regex utility functions.
+	- Add utility functions to the C interface.
+	- Modify API of SearchDBMModal.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.12
+	- tkrzw-python: 0.1.12
+	- tkrzw-ruby: 0.1.12
+
+2021-07-07  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.39
+	- Library version: 1.28.0
+
+	- The C language interface supports the generic file implementation.
+	- Improve efficiency of the restore operation.
+
+2021-07-04  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.38
+	- Library version: 1.27.0
+
+	- Add search and restore features to the C interface.
+	- Add utility functions to know memory usage.
+	- Add a command to check the C interface functionality.
+
+2021-07-02  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.37
+	- Library version: 1.26.0
+
+	- Add the C language interface.
+	- Efficiency of auto restore is improved.
+
+2021-07-01  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.36
+	- Library version: 1.25.0
+
+	- Efficiency of auto restore is improved.
+
+2021-06-29  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.35
+	- Library version: 1.24.0
+
+	- Auto restore feature of HashDBM becomes more efficient.
+	- The database format of HashDBM is changed to be more resilient to I/O failures.
+	- The database format of SkipDBM is changed to be more resilient to I/O failures.
+
+2021-06-26  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.34
+	- Library version: 1.23.0
+
+	- HashDBM::VaridateRecords is added.
+	- CopyFileData supports copy-on-write backup on BtrFS and XFS.
+
+2021-06-21  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.33
+	- Library version: 1.22.0
+
+	- Checksum is embedded in the record header of HashDBM.
+	- Format of record padding is changed in HashDBM.
+	- Hash functions are moved from tkrzw_lib_common.h to tkrzw_hash_util.h.
+	- Performance of CRC-32 is improved if zlib is enabled.
+
+2021-06-20  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.32
+	- Library version: 1.21.0
+
+	- A restore mode "RESTORE_READ_ONLY" is added.
+	- Abolish the ChechHashChain feature.
+	- Fix a bug of race condition between ProcessMulti and Rebuild.
+
+2021-06-19  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.31
+	- Library version: 1.20.0
+
+	- "tkrzw_dbm_util restore" supports in-place restoration.
+	- Performance of HashDBM::Set and HashDBM::Remove is improved.
+
+2021-06-18  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.30
+	- Library version: 1.19.0
+
+	- Data compression features are added.
+
+	- Confirmed compatibility of the compression libraries
+	- zlib 1.2.11
+	- libzstd 1.4.5
+	- liblz4 1.9.2
+	- liblzma 5.2.4
+
+2021-06-14  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.29
+	- Library version: 1.18.0
+
+	- Parallelism of ProcessMulti and ComareExchangeMulti of ShardDBM is improved.
+
+2021-06-13  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.28
+	- Library version: 1.17.0
+
+	- Fix a bug of interface of the Murmur hash function.
+	- Avoid reading too large data from the file.
+
+2021-06-12  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.27
+	- Library version: 1.16.0
+
+	- Add record CRC modes to detect data corruption.
+	- Add a performance test for hash functions.
+
+2021-06-11  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.26
+	- Library version: 1.15.0
+
+	- Improve ability to detect corrupt records on restoration.
+	- Add CRC functions.
+	- The record header section has static_flags.
+
+2021-06-08  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.25
+	- Library version: 1.14.0
+
+	- Auto recovery supports metadata brokage.
+	- Add a command to check transaction features.
+	- Add SkipDBM::ReduceToTotalBigEndian.
+	- Fix a bug that Rebuild performance has inefficiency.
+	- PolyDBM returns dummy iterators for unopened databases.
+
+2021-06-05  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.24
+	- Library version: 1.13.0
+
+	- Add cyclic metadata to HashDBM and SkipDBM.
+	- SkipDBM::FinishStorage becomes more robust.
+	- PageCache supports partial flush.
+	- Performance of HashDBM::Synchronize improves.
+
+2021-05-30  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.23
+	- Library version: 1.12.0
+
+	- Add ReadMetadata and ParseMetadata methods.
+	- Ability of RestoreDatabase metdhods to recover the file is improved.
+	- Modify Makefile.in to support build operations in a subdirectory.
+	- Add parameters for the offset and the size to File::Synchronize.
+	- Performance of synchronizing the database file is improved.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.10
+	- tkrzw-python: 0.1.10
+	- tkrzw-ruby: 0.1.10
+
+2021-05-29  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.22
+	- Library version: 1.11.1
+
+	- Fix a bug of the page cache for block I/O.
+
+2021-05-25  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.21
+	- Library version: 1.11.0
+
+	- Add DBM::RemoveMulti method.
+	- Solve compilation warnings on Mac OS.
+	- Support direct I/O on Mac OS.
+	- Support multi record atomic transaction on HashDBM.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.9
+	- tkrzw-python: 0.1.9
+	- tkrzw-ruby: 0.1.9
+
+2021-05-24  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.20
+	- Library version: 1.10.0
+
+	- Add fine tuning parameters for random access on POSIX.
+
+2021-05-15  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.19
+	- Library version: 1.9.0
+
+	- Performance of direct I/O is improved.
+	- Add min_read_size to HashDBM::TuningParameters.
+
+2021-05-15  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.18
+	- Library version: 1.8.0
+
+	- Fix a bug of cache_buffer on read-only direct I/O mode.
+	- Performance of reading record is improved when alignment is set.
+	- Performance of writing page cachees is improved.
+
+2021-05-14  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.17
+	- Library version: 1.7.0
+
+	- "lock_mem_buckets" and "cache_buckets" parameters become integers.
+	- Add the page cache system to improve direct I/O performance.
+	- PolyDBM supports padding and pagecache options for direct I/O.
+	- SkipDBM keeps file properties across Synchronize and Rebuild.
+	- Remove debug messages inside the library.
+
+2021-05-12  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.16
+	- Library version: 1.6.0
+
+	- Support direct I/O on SkipDBM.
+	- Add PositionalFile::ACCESS_PADDING which aligns the file size for direct I/O.
+	- Add logic to open database files which has padding bytes at the end of the file.
+	- Fix compilation error no Mac OS due to aligned_alloc.
+	- Abolish using std::filesystem package to support GCC 7 or earlier.
+	- Omit test cases by default to support systems which don't support direct I/O.
+
+2021-05-11  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.15
+	- Library version: 1.5.0
+
+	- Add features to do direct IO on Linux.
+	- Positional access file classes support block IO and head caching.
+	- Fix a bug in tkrzw_file_test_common.h where Synchronize shouldn't be called.
+	- Rebuild method keeps space allocation strategy and other properties of the file.
+
+2021-05-06  Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 0.9.14
+	- Library version: 1.4.0
+
+	- Performance of file classes on Windows improves.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.7
+	- tkrzw-python: 0.1.7
+	- tkrzw-ruby: 0.1.7
