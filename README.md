@@ -79,7 +79,7 @@ To simplify versions, you may optionally want to import our BOM (bill of materia
 
 ## Native Libs
 
-Zip libraries must be installed for this version to run.
+Zip libraries must be installed for this version to run. You must also install libstdc++.
 
      sudo apt install zlib1g          # e.g. on ubuntu/debian
      sudo apk add zlib                # e.g. on alpine
