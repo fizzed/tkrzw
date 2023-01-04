@@ -15,13 +15,63 @@
         <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-bom</artifactId>
+                <version>${project.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
-        
+
         <dependency>
             <groupId>com.fizzed</groupId>
-            <artifactId>tkrzw-all-natives</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
+            <artifactId>tkrzw-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-linux-x64</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-linux-arm64</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-linux-armhf</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-linux_musl-x64</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-linux_musl-arm64</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-linux-riscv64</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-macos-x64</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-macos-arm64</artifactId>
         </dependency>
 
         <!-- testing -->
