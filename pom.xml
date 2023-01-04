@@ -1,15 +1,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.fizzed</groupId>
     <artifactId>tkrzw</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.0.5-SNAPSHOT</version>
     <packaging>pom</packaging>
     
     <parent>
         <groupId>com.fizzed</groupId>
         <artifactId>maven-parent</artifactId>
-        <version>2.1.0</version>
+        <version>2.5.0</version>
     </parent>
     
     <properties>
@@ -25,7 +24,15 @@
     <modules>
         <module>tkrzw-api</module>
         <module>tkrzw-linux-x64</module>
-        <module>tkrzw-integration-tests</module>
+        <module>tkrzw-linux-arm64</module>
+        <module>tkrzw-linux_musl-x64</module>
+        <module>tkrzw-linux_musl-arm64</module>
+        <module>tkrzw-linux-armhf</module>
+        <module>tkrzw-linux-riscv64</module>
+        <module>tkrzw-macos-x64</module>
+        <module>tkrzw-macos-arm64</module>
+        <module>tkrzw-bom</module>
+        <module>tkrzw-all-natives</module>
     </modules>
 
     <dependencyManagement>
@@ -40,24 +47,12 @@
 
             <dependency>
                 <groupId>com.fizzed</groupId>
-                <artifactId>tkrzw-linux-x64</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fizzed</groupId>
                 <artifactId>jne</artifactId>
-                <version>3.0.1</version>
+                <version>3.2.0</version>
             </dependency>
             
             <!-- testing -->
-            
-            <dependency>
-                <groupId>com.fizzed</groupId>
-                <artifactId>crux-util</artifactId>
-                <version>1.0.13</version>
-            </dependency>
-            
+
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
@@ -77,15 +72,9 @@
             </dependency>
             
             <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>2.12.0</version>
-            </dependency>
-            
-            <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.1.7</version>
+                <version>1.2.3</version>
             </dependency>
 
         </dependencies>
