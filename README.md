@@ -9,6 +9,7 @@ Java distribution of Tkrzw & JNI libs by Fizzed
 
 [![Linux x64](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/java11.yaml?branch=master&label=Linux%20x64&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/java11.yaml)
 [![Linux arm64](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/linux-arm64.yaml?branch=master&label=Linux%20arm64&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/linux-arm64.yaml)
+[![Linux armhf](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/linux-armhf.yaml?branch=master&label=Linux%20armhf&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/linux-armhf.yaml)
 [![Linux riscv64](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/linux-riscv64.yaml?branch=master&label=Linux%20riscv64&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/linux-riscv64.yaml)
 [![Linux MUSL x64](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/linux-musl-x64.yaml?branch=master&label=Linux%20MUSL%20x64&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/linux-musl-x64.yaml)
 [![Linux MUSL arm64](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/linux-musl-arm64.yaml?branch=master&label=Linux%20MUSL%20arm64&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/linux-musl-arm64.yaml)
