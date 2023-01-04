@@ -32,8 +32,6 @@
         <module>tkrzw-macos-x64</module>
         <module>tkrzw-macos-arm64</module>
         <module>tkrzw-bom</module>
-        <module>tkrzw-integration-tests</module>
-        <!-- this module is last so that nexus sonatype deploys since integration-tests is skipped for deploy -->
         <module>tkrzw-all-natives</module>
     </modules>
 
