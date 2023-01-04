@@ -34,6 +34,12 @@
 
             <dependency>
                 <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-linux-armhf</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
                 <artifactId>tkrzw-linux_musl-x64</artifactId>
                 <version>${project.version}</version>
             </dependency>

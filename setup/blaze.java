@@ -20,19 +20,14 @@ public class blaze extends BlazeBuildx {
     @Override
     protected List<Target> targets() {
         return asList(
-            // Linux armhf (ubuntu 18.04, glibc ?)
-            new Target("linux", "armhf", "ubuntu@10.16.0.133", "arm32v7/ubuntu:18.04"),
-//            new Target("linux", "armhf", null, "arm32v7/ubuntu:18.04"),
-
-            // Linux x64 (ubuntu 18.04, glibc 2.23+)
+            // Linux x64 (ubuntu 18.04, glibc 2.27+)
             new Target("linux", "x64", null, "amd64/ubuntu:18.04"),
-            //new Target("linux", "x64", null, null), // fully local
 
-            // Linux arm64 (ubuntu 16.04, glibc 2.23+)
+            // Linux arm64 (ubuntu 18.04, glibc 2.27+)
             new Target("linux", "arm64", "bmh-build-arm64-ubuntu22-1", "arm64v8/ubuntu:18.04"),
 
-            // Linux armhf (ubuntu 18.04, glibc 2.23+)
-//            new Target("linux", "armhf", null, "arm32v7/ubuntu:18.04"),
+            // Linux armhf (ubuntu 18.04, glibc 2.27+)
+            new Target("linux", "armhf", null, "arm32v7/ubuntu:18.04"),
 
             // Linux MUSL x64 (alpine 3.11)
             new Target("linux_musl", "x64", null, "amd64/alpine:3.11"),
@@ -50,7 +45,6 @@ public class blaze extends BlazeBuildx {
             new Target("linux", "riscv64", null, "riscv64/ubuntu:20.04")
 
             // potentially others could be built too
-            // arm32v7/debian linux-armhf
             // arm32v5/debian linux-armel
             // mips64le/debian linux-mips64le
             // s390x/debian linux-s390x

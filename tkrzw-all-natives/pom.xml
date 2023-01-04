@@ -43,6 +43,11 @@
 
         <dependency>
             <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-linux-armhf</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
             <artifactId>tkrzw-linux_musl-x64</artifactId>
         </dependency>
 
