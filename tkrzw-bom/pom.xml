@@ -76,6 +76,12 @@
 
             <dependency>
                 <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-windows-arm64</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
                 <artifactId>tkrzw-all-natives</artifactId>
                 <version>${project.version}</version>
             </dependency>
