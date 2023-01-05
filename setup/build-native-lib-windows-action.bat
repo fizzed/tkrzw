@@ -35,7 +35,8 @@ set SDKPATH=%SDKPATH:~0,-1%
 
 @REM https://stackoverflow.com/questions/44262083/which-sdk-do-i-need-to-ensure-windows-7-compatibility-in-visual-studio-c-2017
 @REM 0x0601 will be windows 7 and up
-set WINDOWS_VERSION_TARGET=0x0601
+@REM 0x0A00 will be windows 10 and up
+set WINDOWS_VERSION_TARGET=0x0A00
 
 @REM for sed to work with a path being replaced, we need to escape the \ chars twice
 set VCPATH_ESCAPED=%VCPATH:\=\\\%
