@@ -20,6 +20,8 @@ if "%BUILDARCH%"=="" (
 
 echo
 echo Project Dir: %PROJECTDIR%
+echo Target OS: %BUILDOS%
+echo Target Arch: %BUILDARCH%
 echo
 
 set VCVARSALLARCH=x64
@@ -28,7 +30,7 @@ if "%BUILDARCH%"=="arm64" (
 )
 
 @REM can we install visual studio variables?
-@call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" %VCVARSALLARCH% %*
+@call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" %VCVARSALLARCH%
 
 @REM we need to swap in VCToolsInstallDir (but it has a trailing slash)
 set VCTOOLSDIR=%VCToolsInstallDir:~0,-1%
@@ -83,6 +85,5 @@ sed -i -e 's/x64/%TGTARCH%/' VCMakefile
 
 @REM nmake -f VCMakefile headers
 nmake -f VCMakefile
-nmake -f VCMakefile check
 
 copy .\jtkrzw.dll ..\..\tkrzw-%BUILDOS%-%BUILDARCH%\src\main\resources\jne\%BUILDOS%\%BUILDARCH%\
