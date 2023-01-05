@@ -10,7 +10,7 @@ echo Project Dir: %PROJECTDIR%
 echo
 
 @REM can we install visual studio variables?
-@call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 %*
+@call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64_arm64 %*
 
 @REM we need to swap in VCToolsInstallDir (but it has a trailing slash)
 set VCTOOLSDIR=%VCToolsInstallDir:~0,-1%
@@ -30,6 +30,8 @@ cd .\target\tkrzw
 @REM we need NO trailing slash on the tools dir like vcvarsall will include
 set VCPATH=%VCToolsInstallDir:~0,-1%
 set SDKPATH=%WindowsSdkDir%Lib\%WindowsSDKLibVersion%
+@REM for x64 or arm64
+set TGTARCH=%VSCMD_ARG_TGT_ARCH%
 @REM we need NO trailing slash on the sdk path like WindowsSDKLibVersion will include
 set SDKPATH=%SDKPATH:~0,-1%
 
@@ -48,6 +50,7 @@ echo Will use SDKPATH %SDKPATH%
 sed -i -e 's/VCPATH = .*/VCPATH = %VCPATH_ESCAPED%/' VCMakefile
 sed -i -e 's/SDKPATH = .*/SDKPATH = %SDKPATH_ESCAPED%/' VCMakefile
 sed -i -e 's#CLFLAGS = /nologo#CLFLAGS = /nologo /DWINVER=%WINDOWS_VERSION_TARGET% /D_WIN32_WINNT=%WINDOWS_VERSION_TARGET%#' VCMakefile
+sed -i -e 's/x64/%TGTARCH%/' VCMakefile
 
 cat VCMakefile
 
@@ -59,6 +62,7 @@ echo Copying %PROJECTDIR%\setup\VCMakefile-jtkrzw
 
 copy "%PROJECTDIR%\setup\VCMakefile-jtkrzw" .\VCMakefile
 sed -i -e 's#CLFLAGS = /nologo#CLFLAGS = /nologo /DWINVER=%WINDOWS_VERSION_TARGET% /D_WIN32_WINNT=%WINDOWS_VERSION_TARGET%#' VCMakefile
+sed -i -e 's/x64/%TGTARCH%/' VCMakefile
 
 @REM nmake -f VCMakefile headers
 nmake -f VCMakefile
