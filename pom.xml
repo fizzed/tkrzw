@@ -31,6 +31,7 @@
         <module>tkrzw-linux-riscv64</module>
         <module>tkrzw-macos-x64</module>
         <module>tkrzw-macos-arm64</module>
+        <module>tkrzw-windows-x64</module>
         <module>tkrzw-bom</module>
         <module>tkrzw-all-natives</module>
     </modules>
