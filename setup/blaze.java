@@ -20,6 +20,9 @@ public class blaze extends BlazeBuildx {
     @Override
     protected List<Target> targets() {
         return asList(
+            // Windows x64 (??)
+            new Target("windows", "x64", "Joe%20Lauer@bmh-jjlauer-1", null),
+
             // Linux x64 (ubuntu 18.04, glibc 2.27+)
             new Target("linux", "x64", null, "amd64/ubuntu:18.04"),
 
@@ -65,9 +68,9 @@ public class blaze extends BlazeBuildx {
             final String artifactRelPath = "tkrzw-" + target.getOsArch() + "/src/main/resources/jne/" + target.getOs() + "/" + target.getArch() + "/";
 
             String buildScript = "setup/build-native-lib-linux-action.sh";
-//            if (target.getOs().equals("macos")) {
-//                buildScript = "setup/build-native-lib-macos-action.sh";
-//            }
+            if (target.getOs().equals("windows")) {
+                buildScript = "setup/build-native-lib-windows-action.bat";
+            }
 
             project.action(buildScript).run();
             project.rsync("target/output/", artifactRelPath).run();
