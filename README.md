@@ -15,6 +15,8 @@ Java distribution of Tkrzw & JNI libs by Fizzed
 [![Linux MUSL arm64](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/linux-musl-arm64.yaml?branch=master&label=Linux%20MUSL%20arm64&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/linux-musl-arm64.yaml)
 [![MacOS x64](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/macos-x64.yaml?branch=master&label=MacOS%20x64&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/macos-x64.yaml)
 ![MacOS arm64](https://img.shields.io/badge/MacOS%20arm64-available-blue)
+[![Windows x64](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/windows-x64.yaml?branch=master&label=Windows%20x64&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/windows-x64.yaml)
+![Windows arm64](https://img.shields.io/badge/Windows%20arm64-available-blue)
 
 This is a published version of the Tkrzw library for Java 8+, along with native libs that are automatically extracted at runtime.
 
