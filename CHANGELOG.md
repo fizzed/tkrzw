@@ -1,3 +1,8 @@
+## 0.0.6 - 2023-01-07
+ - Based on Tkrzw 1.0.24 and Tkrzw-Java 0.1.28
+ - Support for windows x64 and windows arm64
+ - Buildx system with further improvements for windows
+
 ## 0.0.5 - 2023-01-04
  - Based on Tkrzw 1.0.24 and Tkrzw-Java 0.1.28
  - Many new architectures, new native build system

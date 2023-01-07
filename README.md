@@ -18,7 +18,8 @@ Java distribution of Tkrzw & JNI libs by Fizzed
 [![Windows x64](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/windows-x64.yaml?branch=master&label=Windows%20x64&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/windows-x64.yaml)
 ![Windows arm64](https://img.shields.io/badge/Windows%20arm64-available-blue)
 
-This is a published version of the Tkrzw library for Java 8+, along with native libs that are automatically extracted at runtime.
+This is a published version of the [Tkrzw library](https://dbmx.net/tkrzw/) for Java 8+, along with native libs that are
+automatically extracted at runtime.
 
 The Java library is as unmodified as possible from the original Tkrzw, but a few changes were made to automatically
 extract the library at runtime, along with much improved double locking to prevent the library from being loaded multiple
@@ -26,11 +27,6 @@ times.
 
 Linux x64 native libs are compiled on Ubuntu 18.04, so you can be assured they'll work well on various flavors of linux
 going back several years in time.
-
-## Compression
-
-zlib is enabled, zstd/lzma/lz4 are not enabled since those dependencies are not very common in many environments and
-would prevent the library from loading in Java.
 
 ## Usage
 
@@ -80,23 +76,30 @@ To simplify versions, you may optionally want to import our BOM (bill of materia
 </dependencyManagement>
 ```
 
+In your java code you can use the Tkrzw api as documented [here](https://dbmx.net/tkrzw/api-java/)
+
 ## Native Libs
+
+zlib is enabled, zstd/lzma/lz4 are not enabled since those dependencies are not very common in many environments and
+would prevent the library from loading in Java.
 
 Zip libraries must be installed for this version to run. You must also install libstdc++.
 
      sudo apt install zlib1g          # e.g. on ubuntu/debian
      sudo apk add zlib                # e.g. on alpine
 
-| OS Arch          | Artifact                 | Info                              |
-|------------------|--------------------------|-----------------------------------|
-| Linux x64        | tkrzw-linux-x64          | built on ubuntu 18.04, glibc 2.27 |
-| Linux arm64      | tkrzw-linux-arm64        | built on ubuntu 18.04, glibc 2.27 |
-| Linux armhf      | tkrzw-linux-armhf        | built on ubuntu 18.04, glibc 2.27 |
-| Linux MUSL x64   | tkrzw-linux_musl-x64     | built on alpine 3.11              |
-| Linux MUSL arm64 | tkrzw-linux_musl-arm64   | built on alpine 3.11              |
-| Linux riscv64    | tkrzw-linux-riscv64      | built on ubuntu 20.04, glibc 2.31 |
-| MacOS x64        | tkrzw-macos-x64          | built on macos 10.13 high sierra  |
-| MacOS arm64      | tkrzw-macos-arm64        | built on macos 12 monterey        |
+| OS Arch          | Artifact               | Info                              |
+|------------------|------------------------|-----------------------------------|
+| Linux x64        | tkrzw-linux-x64        | built on ubuntu 18.04, glibc 2.27 |
+| Linux arm64      | tkrzw-linux-arm64      | built on ubuntu 18.04, glibc 2.27 |
+| Linux armhf      | tkrzw-linux-armhf      | built on ubuntu 18.04, glibc 2.27 |
+| Linux MUSL x64   | tkrzw-linux_musl-x64   | built on alpine 3.11              |
+| Linux MUSL arm64 | tkrzw-linux_musl-arm64 | built on alpine 3.11              |
+| Linux riscv64    | tkrzw-linux-riscv64    | built on ubuntu 20.04, glibc 2.31 |
+| MacOS x64        | tkrzw-macos-x64        | built on macos 10.13 high sierra  |
+| MacOS arm64      | tkrzw-macos-arm64      | built on macos 12 monterey        |
+| Windows x64      | tkrzw-windows-x64      | targets win 7+                    |
+| Windows arm64    | tkrzw-windows-arm64    | tested on win 10+                 |
 
 ## Development
 
