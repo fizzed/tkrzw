@@ -71,6 +71,16 @@
             <artifactId>tkrzw-macos-arm64</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-windows-x64</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-windows-arm64</artifactId>
+        </dependency>
+
         <!-- testing -->
 
         <dependency>
