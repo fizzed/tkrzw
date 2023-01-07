@@ -20,8 +20,14 @@ public class blaze extends BlazeBuildx {
     @Override
     protected List<Target> targets() {
         return asList(
+            // Windows x64 (win7+)
+            new Target("windows", "x64", "bmh-build-x64-win11-1", null),
+
+            // Windows arm64 (win10+)
+            new Target("windows", "arm64", "bmh-build-x64-win11-1", null),
+
             // Windows x64 (??)
-            new Target("windows", "x64", "Joe%20Lauer@bmh-jjlauer-1", null),
+//            new Target("windows", "x64", "bmh-jjlauer-1", null),
 
             // Linux x64 (ubuntu 18.04, glibc 2.27+)
             new Target("linux", "x64", null, "amd64/ubuntu:18.04"),
@@ -56,7 +62,7 @@ public class blaze extends BlazeBuildx {
     }
 
     public void build_containers() throws Exception {
-        this.execute((target, project, executor) -> {
+        this.execute((target, project) -> {
             if (project.hasContainer()) {
                 project.exec("setup/build-docker-container-action.sh", target.getBaseDockerImage(), project.getContainerName()).run();
             }
@@ -64,22 +70,34 @@ public class blaze extends BlazeBuildx {
     }
 
     public void build_native_libs() throws Exception {
-        this.execute((target, project, executor) -> {
-            final String artifactRelPath = "tkrzw-" + target.getOsArch() + "/src/main/resources/jne/" + target.getOs() + "/" + target.getArch() + "/";
-
+        this.execute((target, project) -> {
             String buildScript = "setup/build-native-lib-linux-action.sh";
             if (target.getOs().equals("windows")) {
                 buildScript = "setup/build-native-lib-windows-action.bat";
             }
 
-            project.action(buildScript).run();
-            project.rsync("target/output/", artifactRelPath).run();
+            project.action(buildScript, target.getOs(), target.getArch()).run();
+
+            // we know that the only modified file will be in the artifact dir
+            final String artifactRelPath = "tkrzw-" + target.getOsArch() + "/src/main/resources/jne/" + target.getOs() + "/" + target.getArch() + "/";
+            project.rsync(artifactRelPath, artifactRelPath).run();
         });
     }
 
-    public void test_containers() throws Exception {
-        this.execute((target, project, executor) -> {
-            project.action("setup/test-project-action.sh").run();
+    public void tests() throws Exception {
+        this.execute((target, project) -> {
+            // we cannot test the windows-arm64 executable on our windows-x64 host that compiles it
+            // so we will need to simply skip this target on our test run
+            if (target.getOs().equals("windows") && target.getArch().equals("arm64")) {
+                throw new SkipException("cannot test on this host");
+            }
+
+            String testScript = "setup/test-project-action.sh";
+            if (target.getOs().equals("windows")) {
+                testScript = "setup/test-project-action.bat";
+            }
+
+            project.action(testScript).run();
         });
     }
 

@@ -80,6 +80,8 @@ cd ..\tkrzw-java
 echo Copying %PROJECTDIR%\setup\VCMakefile-jtkrzw
 
 copy "%PROJECTDIR%\setup\VCMakefile-jtkrzw" .\VCMakefile
+sed -i -e 's/VCPATH = .*/VCPATH = %VCPATH_ESCAPED%/' VCMakefile
+sed -i -e 's/SDKPATH = .*/SDKPATH = %SDKPATH_ESCAPED%/' VCMakefile
 sed -i -e 's#CLFLAGS = /nologo#CLFLAGS = /nologo /DWINVER=%WINDOWS_VERSION_TARGET% /D_WIN32_WINNT=%WINDOWS_VERSION_TARGET%#' VCMakefile
 sed -i -e 's/x64/%TGTARCH%/' VCMakefile
 

@@ -1,12 +1,26 @@
-#!/bin/sh
+#!/bin/sh -l
+# Use a shell as though we logged in
 
 BASEDIR=$(dirname "$0")
 cd "$BASEDIR/.." || exit 1
 PROJECT_DIR=$PWD
 
+BUILDOS=$1
+BUILDARCH=$2
+
+if [ -z "${BUILDOS}" ] || [ -z "${BUILDOS}" ]; then
+  echo "Usage: script [os] [arch]"
+  exit 1
+fi
+
+echo ""
+echo "Building for"
+echo " projectDir: $PROJECT_DIR"
+echo " os: $BUILDOS"
+echo " arch: $BUILDARCH"
+
 mkdir -p target
 rsync -avrt --delete ./native/ ./target/ || exit 1
-mkdir -p target/output
 
 cd ./target/tkrzw
 ./configure --enable-zlib || exit 1
@@ -31,14 +45,16 @@ cd ../tkrzw-java
 
 make -j4 || exit 1
 
-ls -la "$PROJECT_DIR/target/output/"
-
-if [ $(uname -s) = "Darwin" ]; then
-  cp ./libjtkrzw.dylib "$PROJECT_DIR/target/output/"
-  strip -u -r "$PROJECT_DIR/target/output/libjtkrzw.dylib" || exit 1
+TARGET_LIB=libjtkrzw.so
+if [ "$BUILDOS" = "macos" ]; then
+  TARGET_LIB=libjtkrzw.dylib
+  strip -u -r ./$TARGET_LIB || exit 1
 else
-  cp ./libjtkrzw.so "$PROJECT_DIR/target/output/"
-  strip "$PROJECT_DIR/target/output/libjtkrzw.so" || exit 1
+  strip ./$TARGET_LIB || exit 1
 fi
 
-ls -la "$PROJECT_DIR/target/output/"
+OUTPUT_DIR="../../tkrzw-${BUILDOS}-${BUILDARCH}/src/main/resources/jne/${BUILDOS}/${BUILDARCH}"
+cp ./$TARGET_LIB "$OUTPUT_DIR"
+
+echo "Copied ./$TARGET_LIB to $OUTPUT_DIR"
+echo "Done!"

@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh -l
+# Use a shell as though we logged in
 
 BASEDIR=$(dirname "$0")
 cd "$BASEDIR/.." || exit 1
