@@ -19,7 +19,7 @@ public class blaze {
 
     private final List<Target> targets = asList(
         // Windows x64 (win7+)
-        new Target("windows", "x64")
+        /*new Target("windows", "x64")
                 .setTags("build", "test")
                 .setHost("bmh-build-x64-win11-1"),
 
@@ -31,7 +31,7 @@ public class blaze {
         // Windows arm64 (ONLY for testing)
         new Target("windows", "arm64", "for testing")
                 .setTags("test")
-                .setHost("bmh-build-arm64-win11-1"),
+                .setHost("bmh-build-arm64-win11-1"),*/
 
         // Linux x64 (ubuntu 18.04, glibc 2.27+)
         new Target("linux", "x64")
