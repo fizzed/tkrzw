@@ -19,59 +19,74 @@ public class blaze {
 
     private final List<Target> targets = asList(
         // Windows x64 (win7+)
-        /*new Target("windows", "x64")
+        new Target("windows", "x64", "win11")
                 .setTags("build", "test")
                 .setHost("bmh-build-x64-win11-1"),
 
-        // Windows arm64 (ONLY for building)
-        new Target("windows", "arm64")
+        // Windows x64 (ONLY for arm64 building)
+        new Target("windows", "arm64", "win11")
                 .setTags("build")
                 .setHost("bmh-build-x64-win11-1"),
 
+        // Windows x64 (ONLY for testing)
+        new Target("windows", "x64", "win10")
+            .setTags("test")
+            .setHost("bmh-build-x64-win10-1"),
+
+        // Windows x64 (ONLY for testing)
+        new Target("windows", "x64", "win7")
+            .setTags("test")
+            .setHost("bmh-build-x64-win7-1"),
+
         // Windows arm64 (ONLY for testing)
-        new Target("windows", "arm64", "for testing")
+        new Target("windows", "arm64", "win11")
                 .setTags("test")
-                .setHost("bmh-build-arm64-win11-1"),*/
+                .setHost("bmh-build-arm64-win11-1"),
 
         // Linux x64 (ubuntu 18.04, glibc 2.27+)
-        new Target("linux", "x64")
+        new Target("linux", "x64", "ubuntu18.04")
                 .setTags("build", "test")
                 .setContainerImage("amd64/ubuntu:18.04"),
 
         // Linux arm64 (ubuntu 18.04, glibc 2.27+)
-        new Target("linux", "arm64")
+        new Target("linux", "arm64", "ubuntu18.04")
                 .setTags("build", "test")
                 .setHost("bmh-build-arm64-ubuntu22-1")
                 .setContainerImage("arm64v8/ubuntu:18.04"),
 
         // Linux armhf (ubuntu 18.04, glibc 2.27+)
-        new Target("linux", "armhf")
+        new Target("linux", "armhf", "ubuntu18.04")
                 .setTags("build", "test")
                 .setContainerImage("arm32v7/ubuntu:18.04"),
 
         // Linux MUSL x64 (alpine 3.11)
-        new Target("linux_musl", "x64")
+        new Target("linux_musl", "x64", "alpine3.11")
                 .setTags("build", "test")
                 .setContainerImage("amd64/alpine:3.11"),
 
         // Linux MUSL arm64 (alpine 3.11)
-        new Target("linux_musl", "arm64")
+        new Target("linux_musl", "arm64", "alpine3.11")
                 .setTags("build", "test")
                 .setHost("bmh-build-arm64-ubuntu22-1")
                 .setContainerImage("arm64v8/alpine:3.11"),
 
         // MacOS x64 (10.13+)
-        new Target("macos", "x64")
+        new Target("macos", "x64", "macos10.13")
                 .setTags("build", "test")
                 .setHost("bmh-build-x64-macos1013-1"),
 
+        // MacOS x64 (11)
+        new Target("macos", "x64", "macos11")
+            .setTags("test")
+            .setHost("bmh-build-x64-macos11-1"),
+
         // MacOS arm64 (12+)
-        new Target("macos", "arm64")
+        new Target("macos", "arm64", "macos12")
                 .setTags("build", "test")
                 .setHost("bmh-build-arm64-macos12-1"),
 
         // Linux riscv64 (ubuntu 20.04, glibc 2.31+)
-        new Target("linux", "riscv64")
+        new Target("linux", "riscv64", "ubuntu20.04")
                 .setTags("build", "test")
                 .setContainerImage("riscv64/ubuntu:20.04")
 
