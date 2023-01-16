@@ -25,6 +25,9 @@ make
 make install
 cd ../../
 
+export CFLAGS="$CFLAGS -Wa,--noexecstack"
+export CXXFLAGS="$CXXFLAGS -Wa,--noexecstack"
+
 # tkrzw dependency
 cd ./target/tkrzw
 ./configure --host $BUILDTARGET --enable-zlib
