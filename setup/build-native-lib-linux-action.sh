@@ -1,60 +1,53 @@
-#!/bin/sh -l
-# Use a shell as though we logged in
+#!/bin/bash -lex
+# shell w/ login & interactive, exit if any command fails, log each command
 
 BASEDIR=$(dirname "$0")
-cd "$BASEDIR/.." || exit 1
+cd "$BASEDIR/.."
 PROJECT_DIR=$PWD
 
 BUILDOS=$1
 BUILDARCH=$2
 
-if [ -z "${BUILDOS}" ] || [ -z "${BUILDOS}" ]; then
-  echo "Usage: script [os] [arch]"
-  exit 1
+# Setup cross compile environment
+if [ -f /opt/setup-cross-build-environment.sh ]; then
+  source /opt/setup-cross-build-environment.sh $BUILDOS $BUILDARCH
 fi
 
-echo ""
-echo "Building for"
-echo " projectDir: $PROJECT_DIR"
-echo " os: $BUILDOS"
-echo " arch: $BUILDARCH"
-
 mkdir -p target
-rsync -avrt --delete ./native/ ./target/ || exit 1
+rsync -avrt --delete ./native/ ./target/
 
+# zlib dependency
+cd target
+tar zxvf /opt/zlib-1.2.13.tar.gz
+cd zlib-1.2.13
+./configure --prefix=$SYSROOT
+make
+make install
+cd ../../
+
+# tkrzw dependency
 cd ./target/tkrzw
-./configure --enable-zlib || exit 1
-make -j4 || exit 1
+./configure --host $BUILDTARGET --enable-zlib
+make -j4
 
-# we want to force linking libjtokyocabinet against the static lib vs. the dynamic since some LD loading will look
-# for the soname and versioned library, but we can only auto extract a single .so at a time
+# force static lib to be included in libjtkrzw
 rm -f ./*.so
-rm -f ./*.dylib
-
-ls -la .
 
 # these flags will only help the ./configure succeed for tokyocabinet-java
 export TZDIR="$PWD"
 export CPATH="$CPATH:$TZDIR"
+export CXXFLAGS="$CXXFLAGS -I$TZDIR"
+export LDFLAGS="$LDFLAGS -L$TZDIR"
 export LIBRARY_PATH="$LIBRARY_PATH:$TZDIR"
-# this helps alpine linux build
-export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$TZDIR"
 
+# tkrzw-java
 cd ../tkrzw-java
-./configure || exit 1
-
-make -j4 || exit 1
+cp ../tkrzw/libtkrzw.a .
+./configure --host $BUILDTARGET
+make -j4
 
 TARGET_LIB=libjtkrzw.so
-if [ "$BUILDOS" = "macos" ]; then
-  TARGET_LIB=libjtkrzw.dylib
-  strip -u -r ./$TARGET_LIB || exit 1
-else
-  strip ./$TARGET_LIB || exit 1
-fi
+$STRIP ./$TARGET_LIB
 
 OUTPUT_DIR="../../tkrzw-${BUILDOS}-${BUILDARCH}/src/main/resources/jne/${BUILDOS}/${BUILDARCH}"
 cp ./$TARGET_LIB "$OUTPUT_DIR"
-
-echo "Copied ./$TARGET_LIB to $OUTPUT_DIR"
-echo "Done!"

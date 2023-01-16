@@ -18,83 +18,110 @@ import com.fizzed.buildx.*;
 public class blaze {
 
     private final List<Target> targets = asList(
+        // Linux arm64 (ubuntu 18.04, glibc 2.27+)
+        new Target("linux", "x64")
+            .setTags("build")
+            .setContainerImage("fizzed/buildx:amd64-ubuntu18-jdk11-cross-build"),
+
+        // Linux arm64 (ubuntu 18.04, glibc 2.27+)
+        new Target("linux", "arm64")
+            .setTags("build")
+            .setContainerImage("fizzed/buildx:amd64-ubuntu18-jdk11-cross-build"),
+
+        // Linux armhf (ubuntu 18.04, glibc 2.27+)
+        new Target("linux", "armhf")
+            .setTags("build")
+            .setContainerImage("fizzed/buildx:amd64-ubuntu18-jdk11-cross-build"),
+
+        // Linux armel (ubuntu 18.04, glibc 2.27+)
+        new Target("linux", "armel")
+            .setTags("build")
+            .setContainerImage("fizzed/buildx:amd64-ubuntu18-jdk11-cross-build"),
+
+        // Linux MUSL x64 (alpine 3.11)
+        new Target("linux_musl", "x64")
+            .setTags("build")
+            .setContainerImage("fizzed/buildx:amd64-ubuntu18-jdk11-cross-build"),
+
+        // Linux MUSL arm64 (alpine 3.11)
+        new Target("linux_musl", "arm64")
+            .setTags("build")
+            .setContainerImage("fizzed/buildx:amd64-ubuntu18-jdk11-cross-build"),
+
+        // Linux riscv64 (ubuntu 20.04, glibc 2.31+)
+        new Target("linux", "riscv64")
+            .setTags("build")
+            .setContainerImage("fizzed/buildx:amd64-ubuntu18-jdk11-cross-build"),
+
+        // MacOS x64 (10.13+)
+        new Target("macos", "x64")
+            .setTags("build", "test")
+            .setHost("bmh-build-x64-macos1013-1"),
+
+        // MacOS arm64 (12+)
+        new Target("macos", "arm64")
+            .setTags("build", "test")
+            .setHost("bmh-build-arm64-macos12-1"),
+
         // Windows x64 (win7+)
-        new Target("windows", "x64", "win11")
-                .setTags("build", "test")
-                .setHost("bmh-build-x64-win11-1"),
+        new Target("windows", "x64")
+            .setTags("build", "test")
+            .setHost("bmh-build-x64-win11-1"),
 
-        // Windows x64 (ONLY for arm64 building)
-        new Target("windows", "arm64", "win11")
-                .setTags("build")
-                .setHost("bmh-build-x64-win11-1"),
+        // Windows arm64 (win10+)
+        new Target("windows", "arm64")
+            .setTags("build")
+            .setHost("bmh-build-x64-win11-1"),
 
-        // Windows x64 (ONLY for testing)
-        new Target("windows", "x64", "win10")
+        //
+        // test-only containers
+        //
+
+        new Target("linux", "x64-test")
+            .setTags("test")
+            .setContainerImage("fizzed/buildx:amd64-ubuntu18-jdk11"),
+
+        new Target("linux", "arm64-test")
+            .setTags("test")
+            //.setHost("bmh-build-arm64-ubuntu22-1")
+            .setContainerImage("fizzed/buildx:arm64v8-ubuntu18-jdk11"),
+
+        new Target("linux", "armhf-test")
+            .setTags("test")
+            .setContainerImage("fizzed/buildx:arm32v7-ubuntu18-jdk11"),
+
+        new Target("linux", "armel-test")
+            .setTags("test")
+            .setContainerImage("fizzed/buildx:arm32v5-debian11-jdk11"),
+
+        new Target("linux", "armel-test")
+            .setTags("test")
+            .setContainerImage("fizzed/buildx:arm32v5-debian11-jdk11"),
+
+        new Target("linux", "riscv64-test")
+            .setTags("test")
+            .setContainerImage("fizzed/buildx:riscv64-ubuntu20-jdk19"),
+
+        new Target("linux_musl", "x64-test")
+            .setTags("test")
+            .setContainerImage("fizzed/buildx:amd64-alpine3.11-jdk11"),
+
+        new Target("linux_musl", "arm64-test")
+            .setTags("test")
+            //.setHost("bmh-build-arm64-ubuntu22-1")
+            .setContainerImage("fizzed/buildx:arm64v8-alpine3.11-jdk11"),
+
+        new Target("windows", "x64-test", "win10")
             .setTags("test")
             .setHost("bmh-build-x64-win10-1"),
 
-        // Windows x64 (ONLY for testing)
-        new Target("windows", "x64", "win7")
+        new Target("windows", "x64-test", "win7")
             .setTags("test")
             .setHost("bmh-build-x64-win7-1"),
 
-        // Windows arm64 (ONLY for testing)
-        new Target("windows", "arm64", "win11")
-                .setTags("test")
-                .setHost("bmh-build-arm64-win11-1"),
-
-        // Linux x64 (ubuntu 18.04, glibc 2.27+)
-        new Target("linux", "x64", "ubuntu18.04")
-                .setTags("build", "test")
-                .setContainerImage("amd64/ubuntu:18.04"),
-
-        // Linux arm64 (ubuntu 18.04, glibc 2.27+)
-        new Target("linux", "arm64", "ubuntu18.04")
-                .setTags("build", "test")
-                .setHost("bmh-build-arm64-ubuntu22-1")
-                .setContainerImage("arm64v8/ubuntu:18.04"),
-
-        // Linux armhf (ubuntu 18.04, glibc 2.27+)
-        new Target("linux", "armhf", "ubuntu18.04")
-                .setTags("build", "test")
-                .setContainerImage("arm32v7/ubuntu:18.04"),
-
-        // Linux MUSL x64 (alpine 3.11)
-        new Target("linux_musl", "x64", "alpine3.11")
-                .setTags("build", "test")
-                .setContainerImage("amd64/alpine:3.11"),
-
-        // Linux MUSL arm64 (alpine 3.11)
-        new Target("linux_musl", "arm64", "alpine3.11")
-                .setTags("build", "test")
-                .setHost("bmh-build-arm64-ubuntu22-1")
-                .setContainerImage("arm64v8/alpine:3.11"),
-
-        // MacOS x64 (10.13+)
-        new Target("macos", "x64", "macos10.13")
-                .setTags("build", "test")
-                .setHost("bmh-build-x64-macos1013-1"),
-
-        // MacOS x64 (11)
-        new Target("macos", "x64", "macos11")
+        new Target("windows", "arm64-test", "win11")
             .setTags("test")
-            .setHost("bmh-build-x64-macos11-1"),
-
-        // MacOS arm64 (12+)
-        new Target("macos", "arm64", "macos12")
-                .setTags("build", "test")
-                .setHost("bmh-build-arm64-macos12-1"),
-
-        // Linux riscv64 (ubuntu 20.04, glibc 2.31+)
-        new Target("linux", "riscv64", "ubuntu20.04")
-                .setTags("build", "test")
-                .setContainerImage("riscv64/ubuntu:20.04")
-
-        // potentially others could be built too
-        // arm32v5/debian linux-armel
-        // mips64le/debian linux-mips64le
-        // s390x/debian linux-s390x
-        // ppc64le/debian linux-ppc64le
+            .setHost("bmh-build-arm64-win11-1")
     );
 
     public void build_containers() throws Exception {
@@ -111,7 +138,9 @@ public class blaze {
             .setTags("build")
             .execute((target, project) -> {
                 String buildScript = "setup/build-native-lib-linux-action.sh";
-                if (target.getOs().equals("windows")) {
+                if (target.getOs().equals("macos")) {
+                    buildScript = "setup/build-native-lib-macos-action.sh";
+                } else if (target.getOs().equals("windows")) {
                     buildScript = "setup/build-native-lib-windows-action.bat";
                 }
 

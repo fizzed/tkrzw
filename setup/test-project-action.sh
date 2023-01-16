@@ -1,5 +1,5 @@
-#!/bin/sh -l
-# Use a shell as though we logged in
+#!/bin/sh -lei
+# shell w/ login & interactive, plus exit if any command fails
 
 BASEDIR=$(dirname "$0")
 cd "$BASEDIR/.." || exit 1

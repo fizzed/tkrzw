@@ -48,6 +48,11 @@
 
         <dependency>
             <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-linux-armel</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fizzed</groupId>
             <artifactId>tkrzw-linux_musl-x64</artifactId>
         </dependency>
 
