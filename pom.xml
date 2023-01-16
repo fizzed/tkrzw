@@ -28,6 +28,7 @@
         <module>tkrzw-linux_musl-x64</module>
         <module>tkrzw-linux_musl-arm64</module>
         <module>tkrzw-linux-armhf</module>
+        <module>tkrzw-linux-armel</module>
         <module>tkrzw-linux-riscv64</module>
         <module>tkrzw-macos-x64</module>
         <module>tkrzw-macos-arm64</module>
@@ -50,7 +51,7 @@
             <dependency>
                 <groupId>com.fizzed</groupId>
                 <artifactId>jne</artifactId>
-                <version>3.2.0</version>
+                <version>3.2.1</version>
             </dependency>
             
             <!-- testing -->

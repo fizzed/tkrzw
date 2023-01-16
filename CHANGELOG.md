@@ -1,3 +1,9 @@
+## 0.0.7 - 2023-01-16
+ - Based on Tkrzw 1.0.24 and Tkrzw-Java 0.1.28
+ - Bump JNE v3.2.1 (support for linux-armel)
+ - Add support for linux-armel
+ - Leverages new cross platform build system for linux
+
 ## 0.0.6 - 2023-01-07
  - Based on Tkrzw 1.0.24 and Tkrzw-Java 0.1.28
  - Support for windows x64 and windows arm64
