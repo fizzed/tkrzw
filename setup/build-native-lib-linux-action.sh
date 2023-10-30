@@ -7,23 +7,33 @@ PROJECT_DIR=$PWD
 
 BUILDOS=$1
 BUILDARCH=$2
+BUILDTARGET=$3
 
 # Setup cross compile environment
-if [ -f /opt/setup-cross-build-environment.sh ]; then
-  source /opt/setup-cross-build-environment.sh $BUILDOS $BUILDARCH
-fi
+#if [ -f /opt/setup-cross-build-environment.sh ]; then
+#  source /opt/setup-cross-build-environment.sh $BUILDOS $BUILDARCH
+#fi
 
 mkdir -p target
 rsync -avrt --delete ./native/ ./target/
 
-# zlib dependency
-cd target
-tar zxvf /opt/zlib-1.2.13.tar.gz
-cd zlib-1.2.13
-./configure --prefix=$SYSROOT
-make
-make install
-cd ../../
+# zlib dependency (only on containers though)
+if [ -d /project ]; then
+  cd target
+  tar zxvf zlib-1.3.tar.gz
+  cd zlib-1.3
+  ./configure --prefix=$SYSROOT
+  make
+
+  export ZLIBDIR="$PWD"
+  export CPATH="$CPATH:$ZLIBDIR"
+  export CXXFLAGS="$CXXFLAGS -I$ZLIBDIR"
+  export LDFLAGS="$LDFLAGS -L$ZLIBDIR"
+  export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$ZLIBDIR"
+
+  #make install
+  cd ../../
+fi
 
 export CFLAGS="$CFLAGS -Wa,--noexecstack"
 export CXXFLAGS="$CXXFLAGS -Wa,--noexecstack"
@@ -42,15 +52,18 @@ export CPATH="$CPATH:$TZDIR"
 export CXXFLAGS="$CXXFLAGS -I$TZDIR"
 export LDFLAGS="$LDFLAGS -L$TZDIR"
 export LIBRARY_PATH="$LIBRARY_PATH:$TZDIR"
+# this helps alpine linux build
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$TZDIR"
 
 # tkrzw-java
 cd ../tkrzw-java
+cp ../zlib-1.3/libz.so .
 cp ../tkrzw/libtkrzw.a .
 ./configure --host $BUILDTARGET
 make -j4
 
 TARGET_LIB=libjtkrzw.so
-$STRIP ./$TARGET_LIB
+${STRIP:-strip} ./$TARGET_LIB
 
 OUTPUT_DIR="../../tkrzw-${BUILDOS}-${BUILDARCH}/src/main/resources/jne/${BUILDOS}/${BUILDARCH}"
 cp ./$TARGET_LIB "$OUTPUT_DIR"
