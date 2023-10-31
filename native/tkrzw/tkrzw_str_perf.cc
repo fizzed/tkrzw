@@ -37,7 +37,7 @@ static void PrintUsageAndDie() {
     " (default: 26)\n");
   P("  --whole num : The maximum number of results to get. 0 means the first only."
     " (default: 0)\n");
-  P("  --batch num : The number of patterns in a batch. 0 menas no batching. (default: 0)\n");
+  P("  --batch num : The number of patterns in a batch. 0 means no batching. (default: 0)\n");
   P("\n");
   P("Options of the hash subcommand:\n");
   P("  --iter num : The number of iterations. (default: 10000)\n");
@@ -493,6 +493,22 @@ static int32_t ProcessCompress(int32_t argc, const char** args) {
   tkrzw::LZMACompressor lzma_slow(9);
   if (lzma_slow.IsSupported()) {
     test_sets.emplace_back(std::make_pair(&lzma_slow, "lzma-slow"));
+  }
+  tkrzw::RC4Compressor rc4("abc", 1);
+  if (rc4.IsSupported()) {
+    test_sets.emplace_back(std::make_pair(&rc4, "rc4"));
+  }
+  tkrzw::AESCompressor aes_128(std::string("a", 16), 1);
+  if (rc4.IsSupported()) {
+    test_sets.emplace_back(std::make_pair(&aes_128, "aes-128"));
+  }
+  tkrzw::AESCompressor aes_192(std::string("a", 24), 1);
+  if (rc4.IsSupported()) {
+    test_sets.emplace_back(std::make_pair(&aes_192, "aes-192"));
+  }
+  tkrzw::AESCompressor aes_256(std::string("a", 32), 1);
+  if (rc4.IsSupported()) {
+    test_sets.emplace_back(std::make_pair(&aes_256, "aes-256"));
   }
   for (const auto& test_set : test_sets) {
     tkrzw::Compressor* compressor = test_set.first;

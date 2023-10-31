@@ -117,27 +117,29 @@ static void PrintUsageAndDie() {
   P("  --in_place : Uses in-place rather than pre-defined ones.\n");
   P("  --append : Uses appending rather than pre-defined ones.\n");
   P("  --record_crc num : The record CRC mode: -1, 0, 8, 16, 32. (default: 0 or -1)\n");
-  P("  --record_comp str : The record compression mode: default, none, zlib, zstd, lz4, lzma."
-    " (default: none or default)\n");
+  P("  --record_comp str : The record compression mode:"
+    " default, none, zlib, zstd, lz4, lzma, rc4, aes. (default: none or default)\n");
   P("  --offset_width num : The width to represent the offset of records. (default: %d or -1)\n",
     HashDBM::DEFAULT_OFFSET_WIDTH);
   P("  --align_pow num : Sets the power to align records. (default: %d or -1)\n",
     HashDBM::DEFAULT_ALIGN_POW);
   P("  --buckets num : Sets the number of buckets for hashing. (default: %lld or -1)\n",
     HashDBM::DEFAULT_NUM_BUCKETS);
+  P("  --cipher_key str : Sets the encryption key for cipher compressors. (default: empty)\n");
   P("\n");
   P("Tuning options for TreeDBM:\n");
   P("  --in_place : Uses in-place rather than pre-defined ones.\n");
   P("  --append : Uses appending rather than pre-defined ones.\n");
   P("  --record_crc num : The record CRC mode: -1, 0, 8, 16, 32. (default: 0 or -1)\n");
-  P("  --record_comp str : The record compression mode: default, none, zlib, zstd, lz4, lzma."
-    " (default: none or default)\n");
+  P("  --record_comp str : The record compression mode:"
+    " default, none, zlib, zstd, lz4, lzma, rc4, aes. (default: none or default)\n");
   P("  --offset_width num : The width to represent the offset of records. (default: %d or -1)\n",
     TreeDBM::DEFAULT_OFFSET_WIDTH);
   P("  --align_pow num : Sets the power to align records. (default: %d or -1)\n",
     TreeDBM::DEFAULT_ALIGN_POW);
   P("  --buckets num : Sets the number of buckets for hashing. (default: %lld or -1)\n",
     TreeDBM::DEFAULT_NUM_BUCKETS);
+  P("  --cipher_key str : Sets the encryption key for cipher compressors. (default: empty)\n");
   P("  --max_page_size num : Sets the maximum size of a page. (default: %d or -1)\n",
     TreeDBM::DEFAULT_MAX_PAGE_SIZE);
   P("  --max_branches num : Sets the maximum number of branches of inner nodes."
@@ -279,6 +281,7 @@ bool OpenDBM(DBM* dbm, const std::string& path, bool writable, bool create, bool
              bool with_no_wait, bool with_no_lock, bool with_sync_hard,
              bool is_in_place, bool is_append, int32_t record_crc, const std::string& record_comp,
              int32_t offset_width, int32_t align_pow, int64_t num_buckets,
+             const std::string cipher_key,
              int32_t max_page_size, int32_t max_branches, const std::string& cmp_name,
              int32_t step_unit, int32_t max_level, int64_t sort_mem_size, bool insert_in_order,
              const std::string& poly_params) {
@@ -324,12 +327,17 @@ bool OpenDBM(DBM* dbm, const std::string& path, bool writable, bool create, bool
       tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_LZ4;
     } else if (record_comp == "lzma") {
       tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_LZMA;
+    } else if (record_comp == "rc4") {
+      tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_RC4;
+    } else if (record_comp == "aes") {
+      tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_AES;
     }
     tuning_params.offset_width = offset_width;
     tuning_params.align_pow = align_pow;
     tuning_params.num_buckets = num_buckets;
     tuning_params.restore_mode = tkrzw::HashDBM::RESTORE_READ_ONLY;
     tuning_params.cache_buckets = -1;
+    tuning_params.cipher_key = cipher_key;
     const Status status = hash_dbm->OpenAdvanced(path, writable, open_options, tuning_params);
     if (status != Status::SUCCESS) {
       EPrintL("OpenAdvanced failed: ", status);
@@ -363,12 +371,17 @@ bool OpenDBM(DBM* dbm, const std::string& path, bool writable, bool create, bool
       tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_LZ4;
     } else if (record_comp == "lzma") {
       tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_LZMA;
+    } else if (record_comp == "rc4") {
+      tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_RC4;
+    } else if (record_comp == "aes") {
+      tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_AES;
     }
     tuning_params.offset_width = offset_width;
     tuning_params.align_pow = align_pow;
     tuning_params.num_buckets = num_buckets;
     tuning_params.restore_mode = tkrzw::HashDBM::RESTORE_READ_ONLY;
     tuning_params.cache_buckets = -1;
+    tuning_params.cipher_key = cipher_key;
     tuning_params.max_page_size = max_page_size;
     tuning_params.max_branches = max_branches;
     if (!cmp_name.empty()) {
@@ -433,6 +446,7 @@ bool CloseDBM(DBM* dbm) {
 bool RebuildDBM(DBM* dbm, bool is_in_place, bool is_append,
                 int32_t record_crc, const std::string& record_comp,
                 int32_t offset_width, int32_t align_pow, int64_t num_buckets,
+                const std::string cipher_key,
                 int32_t max_page_size, int32_t max_branches,
                 int32_t step_unit, int32_t max_level,
                 const std::string& poly_params, bool restore) {
@@ -465,11 +479,16 @@ bool RebuildDBM(DBM* dbm, bool is_in_place, bool is_append,
       tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_LZ4;
     } else if (record_comp == "lzma") {
       tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_LZMA;
+    } else if (record_comp == "rc4") {
+      tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_RC4;
+    } else if (record_comp == "aes") {
+      tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_AES;
     }
     tuning_params.offset_width = offset_width;
     tuning_params.align_pow = align_pow;
     tuning_params.num_buckets = num_buckets;
     tuning_params.cache_buckets = -1;
+    tuning_params.cipher_key = cipher_key;
     const Status status = hash_dbm->RebuildAdvanced(tuning_params, restore, true);
     if (status != Status::SUCCESS) {
       EPrintL("RebuildAdvanced failed: ", status);
@@ -503,11 +522,16 @@ bool RebuildDBM(DBM* dbm, bool is_in_place, bool is_append,
       tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_LZ4;
     } else if (record_comp == "lzma") {
       tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_LZMA;
+    } else if (record_comp == "rc4") {
+      tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_RC4;
+    } else if (record_comp == "aes") {
+      tuning_params.record_comp_mode = tkrzw::HashDBM::RECORD_COMP_AES;
     }
     tuning_params.offset_width = offset_width;
     tuning_params.align_pow = align_pow;
     tuning_params.num_buckets = num_buckets;
     tuning_params.cache_buckets = -1;
+    tuning_params.cipher_key = cipher_key;
     tuning_params.max_page_size = max_page_size;
     tuning_params.max_branches = max_branches;
     const Status status = tree_dbm->RebuildAdvanced(tuning_params, restore, true);
@@ -569,7 +593,7 @@ static int32_t ProcessCreate(int32_t argc, const char** args) {
     {"--block_size", 1}, {"--direct_io", 0},
     {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0},
     {"--in_place", 0}, {"--append", 0}, {"--record_crc", 1}, {"--record_comp", 1},
-    {"--offset_width", 1}, {"--align_pow", 1}, {"--buckets", 1},
+    {"--offset_width", 1}, {"--align_pow", 1}, {"--buckets", 1}, {"--cipher_key", 1},
     {"--max_page_size", 1}, {"--max_branches", 1}, {"--comparator", 1},
     {"--step_unit", 1}, {"--max_level", 1},
     {"--params", 1}, {"--truncate", 0},
@@ -600,6 +624,7 @@ static int32_t ProcessCreate(int32_t argc, const char** args) {
   const int32_t offset_width = GetIntegerArgument(cmd_args, "--offset_width", 0, -1);
   const int32_t align_pow = GetIntegerArgument(cmd_args, "--align_pow", 0, -1);
   const int64_t num_buckets = GetIntegerArgument(cmd_args, "--buckets", 0, -1);
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const int32_t max_page_size = GetIntegerArgument(cmd_args, "--max_page_size", 0, -1);
   const int32_t max_branches = GetIntegerArgument(cmd_args, "--max_branches", 0, -1);
   const std::string cmp_name = GetStringArgument(cmd_args, "--comparator", 0, "lex");
@@ -616,7 +641,7 @@ static int32_t ProcessCreate(int32_t argc, const char** args) {
   if (!OpenDBM(dbm.get(), file_path, true, true,
                with_truncate, with_no_wait, with_no_lock, with_sync_hard,
                is_in_place, is_append, record_crc, record_comp,
-               offset_width, align_pow, num_buckets,
+               offset_width, align_pow, num_buckets, cipher_key,
                max_page_size, max_branches, cmp_name,
                step_unit, max_level, -1, false,
                poly_params)) {
@@ -634,7 +659,7 @@ static int32_t ProcessInspect(int32_t argc, const char** args) {
     {"--dbm", 1}, {"--file", 1}, {"--no_wait", 0}, {"--no_lock", 0}, {"--sync_hard", 0},
     {"--alloc_init", 1}, {"--alloc_inc", 1},
     {"--block_size", 1}, {"--direct_io", 0},
-    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0},
+    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--cipher_key", 1},
     {"--validate", 0}, {"--params", 1},
   };
   std::map<std::string, std::vector<std::string>> cmd_args;
@@ -657,6 +682,7 @@ static int32_t ProcessInspect(int32_t argc, const char** args) {
   const bool is_sync_io = CheckMap(cmd_args, "--sync_io");
   const bool is_padding = CheckMap(cmd_args, "--padding");
   const bool is_pagecache = CheckMap(cmd_args, "--pagecache");
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const bool with_validate = CheckMap(cmd_args, "--validate");
   const std::string poly_params = GetStringArgument(cmd_args, "--params", 0, "");
   if (file_path.empty()) {
@@ -667,7 +693,7 @@ static int32_t ProcessInspect(int32_t argc, const char** args) {
       block_size, is_direct_io, is_sync_io, is_padding, is_pagecache);
   if (!OpenDBM(dbm.get(), file_path, false, false, false,
                with_no_wait, with_no_lock, with_sync_hard,
-               false, false, 0, "", -1, -1, -1,
+               false, false, 0, "", -1, -1, -1, cipher_key,
                -1, -1, "",
                -1, -1, -1, false,
                poly_params)) {
@@ -769,8 +795,8 @@ static int32_t ProcessGet(int32_t argc, const char** args) {
     {"--dbm", 1}, {"--file", 1}, {"--no_wait", 0}, {"--no_lock", 0}, {"--sync_hard", 0},
     {"--alloc_init", 1}, {"--alloc_inc", 1},
     {"--block_size", 1}, {"--direct_io", 0},
-    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--multi", 0},
-    {"--params", 1},
+    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--cipher_key", 1},
+    {"--multi", 0}, {"--params", 1},
   };
   std::map<std::string, std::vector<std::string>> cmd_args;
   std::string cmd_error;
@@ -792,6 +818,7 @@ static int32_t ProcessGet(int32_t argc, const char** args) {
   const bool is_sync_io = CheckMap(cmd_args, "--sync_io");
   const bool is_padding = CheckMap(cmd_args, "--padding");
   const bool is_pagecache = CheckMap(cmd_args, "--pagecache");
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const bool is_multi = CheckMap(cmd_args, "--multi");
   const std::string poly_params = GetStringArgument(cmd_args, "--params", 0, "");
   if (file_path.empty()) {
@@ -805,7 +832,7 @@ static int32_t ProcessGet(int32_t argc, const char** args) {
                    block_size, is_direct_io, is_sync_io, is_padding, is_pagecache);
   if (!OpenDBM(dbm.get(), file_path, false, false, false,
                with_no_wait, with_no_lock, with_sync_hard,
-               false, false, 0, "", -1, -1, -1,
+               false, false, 0, "", -1, -1, -1, cipher_key,
                -1, -1, "",
                -1, -1, -1, false,
                poly_params)) {
@@ -850,8 +877,8 @@ static int32_t ProcessSet(int32_t argc, const char** args) {
     {"--dbm", 1}, {"--file", 1}, {"--no_wait", 0}, {"--no_lock", 0}, {"--sync_hard", 0},
     {"--alloc_init", 1}, {"--alloc_inc", 1},
     {"--block_size", 1}, {"--direct_io", 0},
-    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--multi", 0},
-    {"--no_overwrite", 0}, {"--append", 1}, {"--incr", 1}, {"--reducer", 1},
+    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--cipher_key", 1},
+    {"--multi", 0}, {"--no_overwrite", 0}, {"--append", 1}, {"--incr", 1}, {"--reducer", 1},
     {"--params", 1},
   };
   std::map<std::string, std::vector<std::string>> cmd_args;
@@ -875,6 +902,7 @@ static int32_t ProcessSet(int32_t argc, const char** args) {
   const bool is_sync_io = CheckMap(cmd_args, "--sync_io");
   const bool is_padding = CheckMap(cmd_args, "--padding");
   const bool is_pagecache = CheckMap(cmd_args, "--pagecache");
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const bool is_multi = CheckMap(cmd_args, "--multi");
   const bool with_no_overwrite = CheckMap(cmd_args, "--no_overwrite");
   const std::string append_delim =
@@ -893,7 +921,7 @@ static int32_t ProcessSet(int32_t argc, const char** args) {
                    block_size, is_direct_io, is_sync_io, is_padding, is_pagecache);
   if (!OpenDBM(dbm.get(), file_path, true, false, false,
                with_no_wait, with_no_lock, with_sync_hard,
-               false, false, 0, "", -1, -1, -1,
+               false, false, 0, "", -1, -1, -1, cipher_key,
                -1, -1, "",
                -1, -1, -1, false,
                poly_params)) {
@@ -974,8 +1002,8 @@ static int32_t ProcessRemove(int32_t argc, const char** args) {
     {"--dbm", 1}, {"--file", 1}, {"--no_wait", 0}, {"--no_lock", 0}, {"--sync_hard", 0},
     {"--alloc_init", 1}, {"--alloc_inc", 1},
     {"--block_size", 1}, {"--direct_io", 0},
-    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--multi", 0},
-    {"--params", 1},
+    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--cipher_key", 1},
+    {"--multi", 0}, {"--params", 1},
   };
   std::map<std::string, std::vector<std::string>> cmd_args;
   std::string cmd_error;
@@ -997,6 +1025,7 @@ static int32_t ProcessRemove(int32_t argc, const char** args) {
   const bool is_sync_io = CheckMap(cmd_args, "--sync_io");
   const bool is_padding = CheckMap(cmd_args, "--padding");
   const bool is_pagecache = CheckMap(cmd_args, "--pagecache");
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const bool is_multi = CheckMap(cmd_args, "--multi");
   const std::string poly_params = GetStringArgument(cmd_args, "--params", 0, "");
   if (file_path.empty()) {
@@ -1010,7 +1039,7 @@ static int32_t ProcessRemove(int32_t argc, const char** args) {
                    block_size, is_direct_io, is_sync_io, is_padding, is_pagecache);
   if (!OpenDBM(dbm.get(), file_path, true, false, false,
                with_no_wait, with_no_lock, with_sync_hard,
-               false, false, 0, "", -1, -1, -1,
+               false, false, 0, "", -1, -1, -1, cipher_key,
                -1, -1, "",
                -1, -1, -1, false,
                poly_params)) {
@@ -1049,8 +1078,8 @@ static int32_t ProcessRekey(int32_t argc, const char** args) {
     {"", 3}, {"--dbm", 1}, {"--file", 1}, {"--no_wait", 0}, {"--no_lock", 0}, {"--sync_hard", 0},
     {"--alloc_init", 1}, {"--alloc_inc", 1},
     {"--block_size", 1}, {"--direct_io", 0},
-    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--no_overwrite", 0},
-    {"--params", 1},
+    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--cipher_key", 1},
+    {"--no_overwrite", 0}, {"--params", 1},
   };
   std::map<std::string, std::vector<std::string>> cmd_args;
   std::string cmd_error;
@@ -1073,6 +1102,7 @@ static int32_t ProcessRekey(int32_t argc, const char** args) {
   const bool is_sync_io = CheckMap(cmd_args, "--sync_io");
   const bool is_padding = CheckMap(cmd_args, "--padding");
   const bool is_pagecache = CheckMap(cmd_args, "--pagecache");
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const bool with_no_overwrite = CheckMap(cmd_args, "--no_overwrite");
   const std::string poly_params = GetStringArgument(cmd_args, "--params", 0, "");
   if (file_path.empty()) {
@@ -1083,7 +1113,7 @@ static int32_t ProcessRekey(int32_t argc, const char** args) {
                    block_size, is_direct_io, is_sync_io, is_padding, is_pagecache);
   if (!OpenDBM(dbm.get(), file_path, true, false, false,
                with_no_wait, with_no_lock, with_sync_hard,
-               false, false, 0, "", -1, -1, -1,
+               false, false, 0, "", -1, -1, -1, cipher_key,
                -1, -1, "",
                -1, -1, -1, false,
                poly_params)) {
@@ -1108,7 +1138,7 @@ static int32_t ProcessList(int32_t argc, const char** args) {
     {"", 1}, {"--dbm", 1}, {"--file", 1}, {"--no_wait", 0}, {"--no_lock", 0}, {"--sync_hard", 0},
     {"--alloc_init", 1}, {"--alloc_inc", 1},
     {"--block_size", 1}, {"--direct_io", 0},
-    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0},
+    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--cipher_key", 1},
     {"--move", 1}, {"--jump_key", 1}, {"--items", 1}, {"--escape", 0}, {"--keys", 0},
     {"--params", 1},
   };
@@ -1131,6 +1161,7 @@ static int32_t ProcessList(int32_t argc, const char** args) {
   const bool is_sync_io = CheckMap(cmd_args, "--sync_io");
   const bool is_padding = CheckMap(cmd_args, "--padding");
   const bool is_pagecache = CheckMap(cmd_args, "--pagecache");
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const std::string jump_key = GetStringArgument(cmd_args, "--jump_key", 0, "");
   const std::string move_type = GetStringArgument(cmd_args, "--move", 0, "first");
   const int64_t num_items = GetIntegerArgument(cmd_args, "--items", 0, 10);
@@ -1145,7 +1176,7 @@ static int32_t ProcessList(int32_t argc, const char** args) {
                    block_size, is_direct_io, is_sync_io, is_padding, is_pagecache);
   if (!OpenDBM(dbm.get(), file_path, false, false, false,
                with_no_wait, with_no_lock, with_sync_hard,
-               false, false, 0, "", -1, -1, -1,
+               false, false, 0, "", -1, -1, -1, cipher_key,
                -1, -1, "",
                -1, -1, -1, false,
                poly_params)) {
@@ -1256,7 +1287,7 @@ static int32_t ProcessRebuild(int32_t argc, const char** args) {
     {"--block_size", 1}, {"--direct_io", 0},
     {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0},
     {"--in_place", 0}, {"--append", 0}, {"--record_crc", 1}, {"--record_comp", 1},
-    {"--offset_width", 1}, {"--align_pow", 1}, {"--buckets", 1},
+    {"--offset_width", 1}, {"--align_pow", 1}, {"--buckets", 1}, {"--cipher_key", 1},
     {"--max_page_size", 1}, {"--max_branches", 1},
     {"--step_unit", 1}, {"--max_level", 1},
     {"--params", 1}, {"--restore", 0},
@@ -1287,6 +1318,7 @@ static int32_t ProcessRebuild(int32_t argc, const char** args) {
   const int32_t offset_width = GetIntegerArgument(cmd_args, "--offset_width", 0, -1);
   const int32_t align_pow = GetIntegerArgument(cmd_args, "--align_pow", 0, -1);
   const int64_t num_buckets = GetIntegerArgument(cmd_args, "--buckets", 0, -1);
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const int32_t max_page_size = GetIntegerArgument(cmd_args, "--max_page_size", 0, -1);
   const int32_t max_branches = GetIntegerArgument(cmd_args, "--max_branches", 0, -1);
   const int32_t step_unit = GetIntegerArgument(cmd_args, "--step_unit", 0, -1);
@@ -1301,7 +1333,7 @@ static int32_t ProcessRebuild(int32_t argc, const char** args) {
                    block_size, is_direct_io, is_sync_io, is_padding, is_pagecache);
   if (!OpenDBM(dbm.get(), file_path, true, false, false,
                with_no_wait, with_no_lock, with_sync_hard,
-               false, false, 0, "", -1, -1, -1,
+               false, false, 0, "", -1, -1, -1, cipher_key,
                max_page_size, max_branches, "",
                -1, -1, -1, false,
                poly_params)) {
@@ -1311,7 +1343,7 @@ static int32_t ProcessRebuild(int32_t argc, const char** args) {
   const double start_time = GetWallTime();
   Print("Optimizing the database: ... ");
   const bool ok = RebuildDBM(dbm.get(), is_in_place, is_append, record_crc, record_comp,
-                             offset_width, align_pow, num_buckets,
+                             offset_width, align_pow, num_buckets, cipher_key,
                              max_page_size, max_branches,
                              step_unit, max_level,
                              poly_params,
@@ -1333,7 +1365,7 @@ static int32_t ProcessRebuild(int32_t argc, const char** args) {
 static int32_t ProcessRestore(int32_t argc, const char** args) {
   const std::map<std::string, int32_t>& cmd_configs = {
     {"--dbm", 1}, {"--auto", 1}, {"--end_offset", 1},
-    {"--class", 1}, {"--params", 1},
+    {"--class", 1}, {"--cipher_key", 1}, {"--params", 1},
   };
   std::map<std::string, std::vector<std::string>> cmd_args;
   std::string cmd_error;
@@ -1347,6 +1379,7 @@ static int32_t ProcessRestore(int32_t argc, const char** args) {
   const std::string auto_mode = GetStringArgument(cmd_args, "--auto", 0, "none");
   const int64_t end_offset = GetIntegerArgument(cmd_args, "--end_offset", 0, -1);
   const std::string class_name = GetStringArgument(cmd_args, "--class", 0, "");
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const std::string poly_params = GetStringArgument(cmd_args, "--params", 0, "");
   if (old_file_path.empty()) {
     Die("The old file path must be specified");
@@ -1365,7 +1398,8 @@ static int32_t ProcessRestore(int32_t argc, const char** args) {
     if(auto_mode == "none") {
       Print("Restoring the database: ... ");
       const double start_time = GetWallTime();
-      const Status status = HashDBM::RestoreDatabase(old_file_path, new_file_path, end_offset);
+      const Status status =
+          HashDBM::RestoreDatabase(old_file_path, new_file_path, end_offset, cipher_key);
       const double end_time = GetWallTime();
       if (status == Status::SUCCESS) {
         PrintF("ok (elapsed=%.6f)\n", end_time - start_time);
@@ -1388,6 +1422,7 @@ static int32_t ProcessRestore(int32_t argc, const char** args) {
       } else {
         Die("Unknown auto restore mode: ", auto_mode);
       }
+      tuning_params.cipher_key = cipher_key;
       Print("Opening the database with restoring: ... ");
       const double start_time = GetWallTime();
       const Status status =
@@ -1405,7 +1440,8 @@ static int32_t ProcessRestore(int32_t argc, const char** args) {
     if(auto_mode == "none") {
       Print("Restoring the database: ... ");
       const double start_time = GetWallTime();
-      const Status status = TreeDBM::RestoreDatabase(old_file_path, new_file_path, end_offset);
+      const Status status =
+          TreeDBM::RestoreDatabase(old_file_path, new_file_path, end_offset, cipher_key);
       const double end_time = GetWallTime();
       if (status == Status::SUCCESS) {
         PrintF("ok (elapsed=%.6f)\n", end_time - start_time);
@@ -1428,6 +1464,7 @@ static int32_t ProcessRestore(int32_t argc, const char** args) {
       } else {
         Die("Unknown auto restore mode: ", auto_mode);
       }
+      tuning_params.cipher_key = cipher_key;
       Print("Opening the database with restoring: ... ");
       const double start_time = GetWallTime();
       const Status status =
@@ -1574,9 +1611,8 @@ static int32_t ProcessMerge(int32_t argc, const char** args) {
     {"--dbm", 1}, {"--file", 1}, {"--no_wait", 0}, {"--no_lock", 0}, {"--sync_hard", 0},
     {"--alloc_init", 1}, {"--alloc_inc", 1},
     {"--block_size", 1}, {"--direct_io", 0},
-    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0},
-    {"--reducer", 1},
-    {"--params", 1},
+    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--cipher_key", 1},
+    {"--reducer", 1}, {"--params", 1},
   };
   std::map<std::string, std::vector<std::string>> cmd_args;
   std::string cmd_error;
@@ -1597,6 +1633,7 @@ static int32_t ProcessMerge(int32_t argc, const char** args) {
   const bool is_sync_io = CheckMap(cmd_args, "--sync_io");
   const bool is_padding = CheckMap(cmd_args, "--padding");
   const bool is_pagecache = CheckMap(cmd_args, "--pagecache");
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const std::string reducer_name = GetStringArgument(cmd_args, "--reducer", 0, "none");
   const std::string poly_params = GetStringArgument(cmd_args, "--params", 0, "");
   if (dest_path.empty()) {
@@ -1615,7 +1652,7 @@ static int32_t ProcessMerge(int32_t argc, const char** args) {
                    block_size, is_direct_io, is_sync_io, is_padding, is_pagecache);
   if (!OpenDBM(dbm.get(), dest_path, true, true, false,
                with_no_wait, with_no_lock, with_sync_hard,
-               false, false, 0, "", -1, -1, -1,
+               false, false, 0, "", -1, -1, -1, cipher_key,
                -1, -1, "",
                -1, -1, -1, false,
                poly_params)) {
@@ -1649,7 +1686,20 @@ static int32_t ProcessMerge(int32_t argc, const char** args) {
     Status status(Status::SUCCESS);
     for (const auto& src_path : src_paths) {
       auto src_dbm = dbm->MakeDBM();
-      status = src_dbm->Open(src_path, false);
+      const auto& dbm_type = src_dbm->GetType();
+      if (dbm_type == typeid(HashDBM)) {
+        HashDBM* hash_dbm = dynamic_cast<HashDBM*>(src_dbm.get());
+        tkrzw::HashDBM::TuningParameters tuning_params;
+        tuning_params.cipher_key = cipher_key;
+        status = hash_dbm->OpenAdvanced(src_path, false, File::OPEN_DEFAULT, tuning_params);
+      } else if (dbm_type == typeid(TreeDBM)) {
+        TreeDBM* tree_dbm = dynamic_cast<TreeDBM*>(src_dbm.get());
+        tkrzw::TreeDBM::TuningParameters tuning_params;
+        tuning_params.cipher_key = cipher_key;
+        status = tree_dbm->OpenAdvanced(src_path, false, File::OPEN_DEFAULT, tuning_params);
+      } else {
+        status = src_dbm->Open(src_path, false);
+      }
       if (status != Status::SUCCESS) {
         EPrintL("Open failed: ", status);
         has_error = true;
@@ -1687,7 +1737,7 @@ static int32_t ProcessExport(int32_t argc, const char** args) {
     {"", 2}, {"--dbm", 1}, {"--file", 1}, {"--no_wait", 0}, {"--no_lock", 0}, {"--sync_hard", 0},
     {"--alloc_init", 1}, {"--alloc_inc", 1},
     {"--block_size", 1}, {"--direct_io", 0},
-    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0},
+    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--cipher_key", 1},
     {"--tsv", 0}, {"--escape", 0}, {"--keys", 0}, {"--ulog", 1}, {"--ulog_ids", 2},
   };
   std::map<std::string, std::vector<std::string>> cmd_args;
@@ -1710,6 +1760,7 @@ static int32_t ProcessExport(int32_t argc, const char** args) {
   const bool is_sync_io = CheckMap(cmd_args, "--sync_io");
   const bool is_padding = CheckMap(cmd_args, "--padding");
   const bool is_pagecache = CheckMap(cmd_args, "--pagecache");
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const bool is_tsv = CheckMap(cmd_args, "--tsv");
   const bool with_escape = CheckMap(cmd_args, "--escape");
   const bool keys_only = CheckMap(cmd_args, "--keys");
@@ -1743,7 +1794,7 @@ static int32_t ProcessExport(int32_t argc, const char** args) {
       block_size, is_direct_io, is_sync_io, is_padding, is_pagecache);
   if (!OpenDBM(dbm.get(), file_path, false, false, false,
                with_no_wait, with_no_lock, with_sync_hard,
-               false, false, 0, "", -1, -1, -1,
+               false, false, 0, "", -1, -1, -1, cipher_key,
                -1, -1, "",
                -1, -1, -1, false,
                "")) {
@@ -1820,7 +1871,7 @@ static int32_t ProcessImport(int32_t argc, const char** args) {
     {"", 2}, {"--dbm", 1}, {"--file", 1}, {"--no_wait", 0}, {"--no_lock", 0}, {"--sync_hard", 0},
     {"--alloc_init", 1}, {"--alloc_inc", 1},
     {"--block_size", 1}, {"--direct_io", 0},
-    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0},
+    {"--sync_io", 0}, {"--padding", 0}, {"--pagecache", 0}, {"--cipher_key", 1},
     {"--sort_mem_size", 1}, {"--insert_in_order", 0},
     {"--params", 1},
     {"--tsv", 0}, {"--escape", 0}, {"--ulog", 1}, {"--ulog_ids", 2},
@@ -1845,6 +1896,7 @@ static int32_t ProcessImport(int32_t argc, const char** args) {
   const bool is_sync_io = CheckMap(cmd_args, "--sync_io");
   const bool is_padding = CheckMap(cmd_args, "--padding");
   const bool is_pagecache = CheckMap(cmd_args, "--pagecache");
+  const std::string cipher_key = GetStringArgument(cmd_args, "--cipher_key", 0, "");
   const int64_t sort_mem_size = GetIntegerArgument(cmd_args, "--sort_mem_size", 0, -1);
   const bool insert_in_order = CheckMap(cmd_args, "--insert_in_order");
   const std::string poly_params = GetStringArgument(cmd_args, "--params", 0, "");
@@ -1876,7 +1928,7 @@ static int32_t ProcessImport(int32_t argc, const char** args) {
       block_size, is_direct_io, is_sync_io, is_padding, is_pagecache);
   if (!OpenDBM(dbm.get(), file_path, true, true, false,
                with_no_wait, with_no_lock, with_sync_hard,
-               false, false, 0, "", -1, -1, -1,
+               false, false, 0, "", -1, -1, -1, cipher_key,
                -1, -1, "",
                -1, -1, sort_mem_size, insert_in_order,
                poly_params)) {

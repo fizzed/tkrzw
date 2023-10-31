@@ -38,6 +38,26 @@
         <module>tkrzw-all-natives</module>
     </modules>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <!-- activate the use of TCP to transmit events to the plugin -->
+                    <!-- fixes some forking issues on windows and mac of std in/out corrupted errors -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.1</version>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencyManagement>
         
         <dependencies>
@@ -51,7 +71,7 @@
             <dependency>
                 <groupId>com.fizzed</groupId>
                 <artifactId>jne</artifactId>
-                <version>3.2.1</version>
+                <version>4.0.4</version>
             </dependency>
             
             <!-- testing -->

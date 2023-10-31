@@ -74,6 +74,12 @@ jclass cls_status_and;
 jmethodID id_status_and_init;
 jfieldID id_status_and_status;
 jfieldID id_status_and_value;
+jclass cls_recproc;
+jobject obj_recproc_remove;
+jmethodID id_recproc_process;
+jclass cls_recproc_withkey;
+jfieldID id_recproc_withkey_proc;
+jfieldID id_recproc_withkey_key;
 jclass cls_future;
 jmethodID id_future_init;
 jfieldID id_future_ptr;
@@ -142,6 +148,15 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
   id_status_and_init = env->GetMethodID(cls_status_and, "<init>", "()V");
   id_status_and_status = env->GetFieldID(cls_status_and, "status", "Ltkrzw/Status;");
   id_status_and_value = env->GetFieldID(cls_status_and, "value", "Ljava/lang/Object;");
+  cls_recproc = MakeClassRef(env, "tkrzw/RecordProcessor");
+  const jfieldID id_obj_recproc_remove = env->GetStaticFieldID(cls_recproc, "REMOVE", "[B");
+  obj_recproc_remove = env->NewGlobalRef(env->NewByteArray(0));
+  env->SetStaticObjectField(cls_recproc, id_obj_recproc_remove, obj_recproc_remove);
+  id_recproc_process = env->GetMethodID(cls_recproc, "process", "([B[B)[B");
+  cls_recproc_withkey = MakeClassRef(env, "tkrzw/RecordProcessor$WithKey");
+  id_recproc_withkey_proc =
+      env->GetFieldID(cls_recproc_withkey, "processor", "Ltkrzw/RecordProcessor;");
+  id_recproc_withkey_key = env->GetFieldID(cls_recproc_withkey, "key", "[B");
   cls_future = MakeClassRef(env, "tkrzw/Future");
   id_future_init = env->GetMethodID(cls_future, "<init>", "()V");
   id_future_ptr = env->GetFieldID(cls_future, "ptr_", "J");
@@ -276,6 +291,7 @@ class SoftByteArray {
       size_ = env_->GetArrayLength(jary);
     } else {
       ary_ = nullptr;
+      size_ = 0;
     }
   }
 
@@ -297,6 +313,52 @@ class SoftByteArray {
   jbyte* ary_;
   size_t size_;
   jboolean copied_;
+};
+
+// Wrapper to call a Java method as a C++ RecordProcessor.
+class SoftRecordProcessor final : public tkrzw::DBM::RecordProcessor {
+ public:
+  SoftRecordProcessor(JNIEnv* env, jobject jproc) : env_(env), jproc_(jproc) {}
+
+  std::string_view ProcessFull(std::string_view key, std::string_view value) override {
+    jbyteArray jkey = key.data() == NOOP.data() ? nullptr : NewByteArray(env_, key);
+    jbyteArray jvalue = NewByteArray(env_, value);
+    jbyteArray jrv =
+        (jbyteArray)env_->CallObjectMethod(jproc_, id_recproc_process, jkey, jvalue);
+    if (env_->ExceptionOccurred()) {
+      return NOOP;
+    }
+    if (jrv == nullptr) {
+      return NOOP;
+    }
+    if (env_->IsSameObject(jrv, obj_recproc_remove)) {
+      return REMOVE;
+    }
+    new_value_ = std::make_unique<SoftByteArray>(env_, jrv);
+    return new_value_->Get();
+  }
+
+  std::string_view ProcessEmpty(std::string_view key) override {
+    jbyteArray jkey = key.data() == NOOP.data() ? nullptr : NewByteArray(env_, key);
+    jbyteArray jrv =
+        (jbyteArray)env_->CallObjectMethod(jproc_, id_recproc_process, jkey, nullptr);
+    if (env_->ExceptionOccurred()) {
+      return NOOP;
+    }
+    if (jrv == nullptr) {
+      return NOOP;
+    }
+    if (env_->IsSameObject(jrv, obj_recproc_remove)) {
+      return REMOVE;
+    }
+    new_value_ = std::make_unique<SoftByteArray>(env_, jrv);
+    return new_value_->Get();
+  }
+
+ private:
+  JNIEnv* env_;
+  jobject jproc_;
+  std::unique_ptr<SoftByteArray> new_value_;
 };
 
 // Gets the future pointer of the Java future object.
@@ -737,6 +799,24 @@ JNIEXPORT jobject JNICALL Java_tkrzw_DBM_close
   return NewStatus(env, status);
 }
 
+// Implementation of DBM#process.
+JNIEXPORT jobject JNICALL Java_tkrzw_DBM_process
+(JNIEnv* env, jobject jself, jbyteArray jkey, jobject jproc, jboolean writable) {
+  tkrzw::ParamDBM* dbm = GetDBM(env, jself);
+  if (dbm == nullptr) {
+    ThrowIllegalArgument(env, "not opened database");
+    return nullptr;
+  }
+  if (jkey == nullptr || jproc == nullptr) {
+    ThrowNullPointer(env);
+    return nullptr;
+  }
+  SoftByteArray key(env, jkey);
+  SoftRecordProcessor proc(env, jproc);
+  tkrzw::Status status = dbm->Process(key.Get(), &proc, writable);
+  return NewStatus(env, status);
+}
+
 // Implementation of DBM#contains.
 JNIEXPORT jboolean JNICALL Java_tkrzw_DBM_contains
 (JNIEnv* env, jobject jself, jbyteArray jkey) {
@@ -816,6 +896,7 @@ JNIEXPORT jobject JNICALL Java_tkrzw_DBM_getMulti___3_3B
   }
   std::vector<std::string> keys;
   const int32_t num_keys = env->GetArrayLength(jkeys);
+  keys.reserve(num_keys);
   for (int32_t i = 0; i < num_keys; i++) {
     jbyteArray jkey = (jbyteArray)env->GetObjectArrayElement(jkeys, i);
     SoftByteArray key(env, jkey);
@@ -841,6 +922,7 @@ JNIEXPORT jobject JNICALL Java_tkrzw_DBM_getMulti___3Ljava_lang_String_2
   }
   std::vector<std::string> keys;
   const int32_t num_keys = env->GetArrayLength(jkeys);
+  keys.reserve(num_keys);
   for (int32_t i = 0; i < num_keys; i++) {
     jstring jkey = (jstring)env->GetObjectArrayElement(jkeys, i);
     SoftString key(env, jkey);
@@ -1035,6 +1117,7 @@ JNIEXPORT jobject JNICALL Java_tkrzw_DBM_removeMulti___3_3B
   }
   std::vector<std::string> keys;
   const int32_t num_keys = env->GetArrayLength(jkeys);
+  keys.reserve(num_keys);
   for (int32_t i = 0; i < num_keys; i++) {
     jbyteArray jkey = (jbyteArray)env->GetObjectArrayElement(jkeys, i);
     SoftByteArray key(env, jkey);
@@ -1059,6 +1142,7 @@ JNIEXPORT jobject JNICALL Java_tkrzw_DBM_removeMulti___3Ljava_lang_String_2
   }
   std::vector<std::string> keys;
   const int32_t num_keys = env->GetArrayLength(jkeys);
+  keys.reserve(num_keys);
   for (int32_t i = 0; i < num_keys; i++) {
     jstring jkey = (jstring)env->GetObjectArrayElement(jkeys, i);
     SoftString key(env, jkey);
@@ -1304,6 +1388,38 @@ JNIEXPORT jlong JNICALL Java_tkrzw_DBM_increment
   return tkrzw::INT64MIN;
 }
 
+// Implementation of DBM#processMulti.
+JNIEXPORT jobject JNICALL Java_tkrzw_DBM_processMulti
+(JNIEnv* env, jobject jself, jobjectArray jkppairs, jboolean writable) {
+  tkrzw::ParamDBM* dbm = GetDBM(env, jself);
+  if (dbm == nullptr) {
+    ThrowIllegalArgument(env, "not opened database");
+    return nullptr;
+  }
+  if (jkppairs == nullptr) {
+    ThrowNullPointer(env);
+    return nullptr;
+  }
+  std::vector<std::pair<std::string_view, tkrzw::DBM::RecordProcessor*>> kppairs;
+  std::vector<std::unique_ptr<SoftRecordProcessor>> procs;
+  std::vector<std::string> keys;
+  const int32_t num_pairs = env->GetArrayLength(jkppairs);
+  kppairs.reserve(num_pairs);
+  procs.reserve(num_pairs);
+  keys.reserve(num_pairs);
+  for (int32_t i = 0; i < num_pairs; i++) {
+    jobject jpair = env->GetObjectArrayElement(jkppairs, i);
+    jobject jproc = env->GetObjectField(jpair, id_recproc_withkey_proc);
+    jbyteArray jkey = (jbyteArray)env->GetObjectField(jpair, id_recproc_withkey_key);
+    procs.emplace_back(std::make_unique<SoftRecordProcessor>(env, jproc));
+    SoftByteArray key(env, jkey);
+    keys.emplace_back(key.Get());
+    kppairs.emplace_back(std::make_pair(std::string_view(keys.back()), procs.back().get()));
+  }
+  const tkrzw::Status status = dbm->ProcessMulti(kppairs, writable);
+  return NewStatus(env, status);
+}
+
 // Implementation of DBM#compareExchangeMulti.
 JNIEXPORT jobject JNICALL Java_tkrzw_DBM_compareExchangeMulti
 (JNIEnv* env, jobject jself, jobject jexpected, jobject jdesired) {
@@ -1381,6 +1497,23 @@ JNIEXPORT jobject JNICALL Java_tkrzw_DBM_pushLast
   }
   SoftByteArray value(env, jvalue);
   const tkrzw::Status status = dbm->PushLast(value.Get(), wtime);
+  return NewStatus(env, status);
+}
+
+// Implementation of DBM#processEach.
+JNIEXPORT jobject JNICALL Java_tkrzw_DBM_processEach
+(JNIEnv* env, jobject jself, jobject jproc, jboolean writable) {
+  tkrzw::ParamDBM* dbm = GetDBM(env, jself);
+  if (dbm == nullptr) {
+    ThrowIllegalArgument(env, "not opened database");
+    return nullptr;
+  }
+  if (jproc == nullptr) {
+    ThrowNullPointer(env);
+    return nullptr;
+  }
+  SoftRecordProcessor proc(env, jproc);
+  tkrzw::Status status = dbm->ProcessEach(&proc, writable);
   return NewStatus(env, status);
 }
 
@@ -1693,19 +1826,24 @@ JNIEXPORT jstring JNICALL Java_tkrzw_DBM_toString
 // Implementation of DBM#restoreDatabase.
 JNIEXPORT jobject JNICALL Java_tkrzw_DBM_restoreDatabase
 (JNIEnv* env, jclass jcls, jstring jold_file_path, jstring jnew_file_path,
- jstring jclass_name, jlong end_offset) {
+ jstring jclass_name, jlong end_offset, jbyteArray jcipher_key) {
   SoftString old_file_path(env, jold_file_path);
   SoftString new_file_path(env, jnew_file_path);
   SoftString class_name(env, jclass_name);
+  SoftByteArray cipher_key(env, jcipher_key);
+  std::string_view cipher_key_raw = cipher_key.Get();
+  if (cipher_key_raw.data() == nullptr) {
+    cipher_key_raw = "";
+  }
   tkrzw::Status status(tkrzw::Status::SUCCESS);
   int32_t num_shards = 0;
   if (tkrzw::ShardDBM::GetNumberOfShards(old_file_path.Get(), &num_shards) ==
       tkrzw::Status::SUCCESS) {
     status = tkrzw::ShardDBM::RestoreDatabase(
-        old_file_path.Get(), new_file_path.Get(), class_name.Get(), end_offset);
+        old_file_path.Get(), new_file_path.Get(), class_name.Get(), end_offset, cipher_key_raw);
   } else {
     status = tkrzw::PolyDBM::RestoreDatabase(
-        old_file_path.Get(), new_file_path.Get(), class_name.Get(), end_offset);
+        old_file_path.Get(), new_file_path.Get(), class_name.Get(), end_offset, cipher_key_raw);
   }
   return NewStatus(env, status);
 }
@@ -2019,6 +2157,7 @@ JNIEXPORT jobject JNICALL Java_tkrzw_AsyncDBM_getMulti___3_3B
   }
   std::vector<std::string> keys;
   const int32_t num_keys = env->GetArrayLength(jkeys);
+  keys.reserve(num_keys);
   for (int32_t i = 0; i < num_keys; i++) {
     jbyteArray jkey = (jbyteArray)env->GetObjectArrayElement(jkeys, i);
     SoftByteArray key(env, jkey);
@@ -2043,6 +2182,7 @@ JNIEXPORT jobject JNICALL Java_tkrzw_AsyncDBM_getMulti___3Ljava_lang_String_2
   }
   std::vector<std::string> keys;
   const int32_t num_keys = env->GetArrayLength(jkeys);
+  keys.reserve(num_keys);
   for (int32_t i = 0; i < num_keys; i++) {
     jstring jkey = (jstring)env->GetObjectArrayElement(jkeys, i);
     SoftString key(env, jkey);
@@ -2181,6 +2321,7 @@ JNIEXPORT jobject JNICALL Java_tkrzw_AsyncDBM_removeMulti___3_3B
   }
   std::vector<std::string> keys;
   const int32_t num_keys = env->GetArrayLength(jkeys);
+  keys.reserve(num_keys);
   for (int32_t i = 0; i < num_keys; i++) {
     jbyteArray jkey = (jbyteArray)env->GetObjectArrayElement(jkeys, i);
     SoftByteArray key(env, jkey);
@@ -2205,6 +2346,7 @@ JNIEXPORT jobject JNICALL Java_tkrzw_AsyncDBM_removeMulti___3Ljava_lang_String_2
   }
   std::vector<std::string> keys;
   const int32_t num_keys = env->GetArrayLength(jkeys);
+  keys.reserve(num_keys);
   for (int32_t i = 0; i < num_keys; i++) {
     jstring jkey = (jstring)env->GetObjectArrayElement(jkeys, i);
     SoftString key(env, jkey);

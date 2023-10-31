@@ -334,6 +334,71 @@ void StrReplaceCharacters(std::string* str, std::string_view before, std::string
 bool StrContains(std::string_view text, std::string_view pattern);
 
 /**
+ * Checks whether a text contains a pattern in a case-insensitive manner.
+ * @param text The text to search.
+ * @param pattern The pattern to search for.
+ * @return True if the text contains the pattern.
+ */
+bool StrCaseContains(std::string_view text, std::string_view pattern);
+
+/**
+ * Checks whether a text contains a word surrounded by non-alphanumeric word boundaries.
+ * @param text The text to search.
+ * @param pattern The pattern to search for.
+ * @return True if the text contains the pattern.
+ */
+bool StrWordContains(std::string_view text, std::string_view pattern);
+
+/**
+ * Checks whether a text contains a word in a case-sensitive manner.
+ * @param text The text to search.
+ * @param pattern The pattern to search for.
+ * @return True if the text contains the pattern.
+ */
+bool StrCaseWordContains(std::string_view text, std::string_view pattern);
+
+/**
+ * Checks a text contains at least one of patterns.
+ * @param text The text to search.
+ * @param patterns The patterns to search for.
+ * @return True if the text contains at least one of patterns.
+ */
+bool StrContainsBatch(std::string_view text, const std::vector<std::string>& patterns);
+
+/**
+ * Checks a text contains at least one of patterns in a case-sensitive manner.
+ * @param text The text to search.
+ * @param patterns The patterns to search for.
+ * @return True if the text contains at least one of patterns.
+ */
+bool StrCaseContainsBatch(std::string_view text, const std::vector<std::string>& patterns);
+
+/**
+ * Checks a text contains at least one of words surrounded by non-alphanumeric word boundaries.
+ * @param text The text to search.
+ * @param patterns The patterns to search for.
+ * @return True if the text contains at least one of patterns.
+ */
+bool StrWordContainsBatch(std::string_view text, const std::vector<std::string>& patterns);
+
+/**
+ * Checks a text contains at least one of words in a case-sensitive manner.
+ * @param text The text to search.
+ * @param patterns The patterns to search for.
+ * @return True if the text contains at least one of patterns.
+ */
+bool StrCaseWordContainsBatch(std::string_view text, const std::vector<std::string>& patterns);
+
+/**
+ * Checks a text contains at least one of lowercase words in a case-sensitive manner.
+ * @param text The text to search.
+ * @param patterns The patterns to search for.  Each must be lowercased.
+ * @return True if the text contains at least one of patterns.
+ */
+bool StrCaseWordContainsBatchLower(
+    std::string_view text, const std::vector<std::string>& patterns);
+
+/**
  * Checks whether a text begins with a pattern.
  * @param text The text to search.
  * @param pattern The pattern to search for.
@@ -506,6 +571,30 @@ std::vector<std::vector<int32_t>> StrSearchBatchRK(
     std::string_view text, const std::vector<std::string>& patterns, size_t max_results = 0);
 
 /**
+ * Searches a text for a pattern in a case-insensitive manner.
+ * @param text The text to search.
+ * @param pattern The pattern to search for.
+ * @return The index of the first matched position, or -1 if there's no matches.
+ */
+int32_t StrCaseSearch(std::string_view text, std::string_view pattern);
+
+/**
+ * Searches a text for a word surrounded by non-alphanumeric word boundaries.
+ * @param text The text to search.
+ * @param pattern The pattern to search for.
+ * @return The index of the first matched position, or -1 if there's no matches.
+ */
+int32_t StrWordSearch(std::string_view text, std::string_view pattern);
+
+/**
+ * Searches a text for a word surrounded in a case-insensitive manner.
+ * @param text The text to search.
+ * @param pattern The pattern to search for.
+ * @return The index of the first matched position, or -1 if there's no matches.
+ */
+int32_t StrCaseWordSearch(std::string_view text, std::string_view pattern);
+
+/**
  * Removes space characters at the head or the tail of a string.
  * @param str The string to convert.
  * @return The converted string.
@@ -586,7 +675,10 @@ std::string StrDecodeURL(std::string_view str);
 /**
  * Searches a string for a pattern matching a regular expression.
  * @param text The text to search.
- * @param pattern The regular expression pattern to search for.
+ * @param pattern The regular expression pattern to search for.  Leading "(?i)" makes the pattern
+ * case-insensitive.  Other options "a" (AWK regex), "b" (basic POSIX regex), "e" (extended POSIX
+ * regex), and "l" (egrep) are available in addition to "i".  The default regex format is
+ * ECMAScript.
  * @return The position of the first matching pattern.  If there's no matching pattern. -1 is
  * returned.  If the regular expression is invalid, -2 is returned.
  */
@@ -595,7 +687,10 @@ int32_t StrSearchRegex(std::string_view text, std::string_view pattern);
 /**
  * Replaces substrings matching a pattern of regular expression.
  * @param text The text to process.
- * @param pattern The regular expression pattern to search for.
+ * @param pattern The regular expression pattern to search for.  Leading "(?i)" makes the pattern
+ * case-insensitive.  Other options "a" (AWK regex), "b" (basic POSIX regex), "e" (extended POSIX
+ * regex), and "l" (egrep) are available in addition to "i".  The default regex format is
+ * ECMAScript.
  * @param replace The replacing expression. "$&" means the entire matched pattern.  "$1", "$2",
  * and etc represent n-th bracketed patterns.
  * @return The result string.  If the regular expression is invalid, an empty string is returned.

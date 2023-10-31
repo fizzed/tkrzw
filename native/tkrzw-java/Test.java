@@ -49,6 +49,13 @@ public class Test {
       } finally {
         removeDirectory(tmp_dir_path);
       }
+    } else if (args[0].equals("process")) {
+      String tmp_dir_path = createTempDir();
+      try {
+        rv = runProcess(tmp_dir_path);
+      } finally {
+        removeDirectory(tmp_dir_path);
+      }
     } else if (args[0].equals("iter")) {
       String tmp_dir_path = createTempDir();
       try {
@@ -542,7 +549,7 @@ public class Test {
         if (class_name.equals("HashDBM") || class_name.equals("TreeDBM")) {
           String restored_path = copy_path + "-restored";
           check(DBM.restoreDatabase(
-              copy_path, restored_path, class_name, -1).equals(Status.SUCCESS));
+              copy_path, restored_path, class_name, -1, null).equals(Status.SUCCESS));
         }
       }
       DBM export_dbm = new DBM();
@@ -730,6 +737,98 @@ public class Test {
       }
       dbm.destruct();
     }
+    STDOUT.printf("  ... OK\n");
+    return 0;
+  }
+
+  /**
+   * Runs the basic test.
+   */
+  private static int runProcess(String tmp_dir_path) {
+    STDOUT.printf("Running process tests:\n");
+    String path = tmp_dir_path + java.io.File.separatorChar + "casket.tkh";
+    DBM dbm = new DBM();
+    check(dbm.open(path, true, Utility.parseParams("num_buckets=1000")).equals(Status.SUCCESS));
+    check(dbm.process("abc", (k, v)->null, true).equals(Status.Code.SUCCESS));
+    check(dbm.get("abc") == null);
+    check(dbm.process("abc", (k, v)->RecordProcessor.REMOVE, true).equals(Status.Code.SUCCESS));
+    check(dbm.get("abc") == null);
+    check(dbm.process("abc", (k, v)->"ABCDE".getBytes(), true).equals(Status.Code.SUCCESS));
+    check(dbm.get("abc").equals("ABCDE"));
+    RecordProcessor proc1 = (k, v) -> {
+      check(new String(k).equals("abc"));
+      check(new String(v).equals("ABCDE"));
+      return null;
+    };
+    check(dbm.process("abc", proc1, false).equals(Status.Code.SUCCESS));
+    check(dbm.process("abc", (k, v)->RecordProcessor.REMOVE, true).equals(Status.Code.SUCCESS));
+    check(dbm.get("abc") == null);
+    RecordProcessor proc2 = (k, v) -> {
+      check(new String(k).equals("abc"));
+      check(v == null);
+      return null;
+    };
+    check(dbm.process("abc", proc2, false).equals(Status.Code.SUCCESS));
+    for (int i = 0; i < 10; i++) {
+      final int ii = i;
+      check(dbm.process(Integer.toString(i),
+                        (k, v)->Integer.toString(ii * ii).getBytes(),
+                        true).equals(Status.Code.SUCCESS));
+    }
+    check(dbm.count() == 10);
+    final int[] counters = new int[2];
+    counters[0] = 0;
+    counters[1] = 0;
+    RecordProcessor proc3 = (k, v) -> {
+      if (v == null) {
+        counters[0]++;
+      } else {
+        counters[1]++;
+      }
+      return null;
+    };
+    check(dbm.processEach(proc3, false).equals(Status.Code.SUCCESS));
+    check(counters[0] == 2);
+    check(counters[1] == 10);
+    RecordProcessor proc4 = (k, v) -> {
+      if (k == null) return null;
+      double n = Integer.parseInt(new String(v));
+      return Integer.toString((int)Math.sqrt(n)).toString().getBytes();
+    };
+    check(dbm.processEach(proc4, true).equals(Status.Code.SUCCESS));
+    RecordProcessor proc5 = (k, v) -> {
+      if (k == null) return null;
+      check(Arrays.equals(k, v));
+      return RecordProcessor.REMOVE;
+    };
+    check(dbm.processEach(proc5, true).equals(Status.Code.SUCCESS));
+    check(dbm.count() == 0);
+    RecordProcessor.WithKey[] ops1 = {
+      new RecordProcessor.WithKey("one", (k, v)->"hop".getBytes()),
+      new RecordProcessor.WithKey("two", (k, v)->"step".getBytes()),
+      new RecordProcessor.WithKey("three", (k, v)->"jump".getBytes()),
+    };
+    check(dbm.processMulti(ops1, true).equals(Status.Code.SUCCESS));
+    RecordProcessor twofold = (k, v) -> {
+      if (v == null) return "x".getBytes();
+      return (new String(v) + new String(v)).getBytes();
+    };
+    RecordProcessor.WithKey[] ops2 = {
+      new RecordProcessor.WithKey("one", (k, v)->RecordProcessor.REMOVE),
+      new RecordProcessor.WithKey("two", (k, v)->RecordProcessor.REMOVE),
+      new RecordProcessor.WithKey("three", twofold),
+      new RecordProcessor.WithKey("four", twofold),
+      new RecordProcessor.WithKey("three", twofold),
+      new RecordProcessor.WithKey("four", twofold),
+    };
+    check(dbm.processMulti(ops2, true).equals(Status.Code.SUCCESS));
+    check(dbm.count() == 2);
+    check(dbm.get("one") == null);
+    check(dbm.get("two") == null);
+    check(dbm.get("three").equals("jumpjumpjumpjump"));
+    check(dbm.get("four").equals("xx"));
+    check(dbm.close().equals(Status.SUCCESS));
+    dbm.destruct();
     STDOUT.printf("  ... OK\n");
     return 0;
   }

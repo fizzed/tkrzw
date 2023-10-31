@@ -32,13 +32,14 @@ public class DBM {
 
   /**
    * The special bytes value for no-operation or any data.
+   * @note The actual value is set by the native code.
    */
-  static public byte[] ANY_BYTES;
+  public static final byte[] ANY_BYTES = null;
 
   /**
    * The special string value for no-operation or any data.
    */
-  static public String ANY_STRING = new String("\0");
+  public static final String ANY_STRING = new String("\0");
 
   /**
    * Constructor.
@@ -99,7 +100,8 @@ public class DBM {
    * <li>record_comp_mode (string): How to compress the record data: "RECORD_COMP_NONE" to
    * do no compression, "RECORD_COMP_ZLIB" to compress with ZLib, "RECORD_COMP_ZSTD" to
    * compress with ZStd, "RECORD_COMP_LZ4" to compress with LZ4, "RECORD_COMP_LZMA" to
-   * compress with LZMA.
+   * compress with LZMA, "RECORD_COMP_RC4" to cipher with RC4, "RECORD_COMP_AES" to cipher
+   * with AES.
    * <li>offset_width (int): The width to represent the offset of records.
    * <li>align_pow (int): The power to align records.
    * <li>num_buckets (int): The number of buckets for hashing.
@@ -109,6 +111,7 @@ public class DBM {
    * <li>fbp_capacity (int): The capacity of the free block pool.
    * <li>min_read_size (int): The minimum reading size to read a record.
    * <li>cache_buckets (bool): True to cache the hash buckets on memory.
+   * <li>cipher_key (string): The encryption key for cipher compressors.
    * </ul>
    * <p>For TreeDBM, all optional parameters for HashDBM are available.  In addition, these
    * optional parameters are supported.
@@ -116,6 +119,8 @@ public class DBM {
    * <li>max_page_size (int): The maximum size of a page.
    * <li>max_branches (int): The maximum number of branches each inner node can have.
    * <li>max_cached_pages (int): The maximum number of cached pages.
+   * <li>page_update_mode (string): What to do when each page is updated: "PAGE_UPDATE_NONE" is
+   * to do no operation or "PAGE_UPDATE_WRITE" is to write immediately.
    * <li>key_comparator (string): The comparator of record keys: "LexicalKeyComparator" for
    * the lexical order, "LexicalCaseKeyComparator" for the lexical order ignoring case,
    * "DecimalKeyComparator" for the order of the decimal integer numeric expressions,
@@ -198,6 +203,34 @@ public class DBM {
    * @return The result status.
    */
   public native Status close();
+
+  /**
+   * Processes a record with a processor.
+   * @param key The key of the record.
+   * @param proc The processor object.  Its "process" method is called.  The first parameter is
+   * the key of the record.  The second parameter is the value of the existing record,
+   * or null if it the record doesn't exist.  The return value is a byte array to update the
+   * record value.  If the return value is null, the record is not modified.  If the return value
+   * is REMOVE, the record is removed.
+   * @param writable True if the processor can edit the record.
+   * @return The result status.
+   */
+  public native Status process(byte[] key, RecordProcessor proc, boolean writable);
+
+  /**
+   * Processes a record with a processor.
+   * @param key The key of the record.
+   * @param proc The processor object.  Its "process" method is called.  The first parameter is
+   * the key of the record.  The second parameter is the value of the existing record,
+   * or null if it the record doesn't exist.  The return value is a byte array to update the
+   * record value.  If the return value is null, the record is not modified.  If the return value
+   * is REMOVE, the record is removed.
+   * @param writable True if the processor can edit the record.
+   * @return The result status.
+   */
+  public Status process(String key, RecordProcessor proc, boolean writable) {
+    return process(key.getBytes(StandardCharsets.UTF_8), proc, writable);
+  }
 
   /**
    * Checks if a record exists or not.
@@ -558,6 +591,18 @@ public class DBM {
   }
 
   /**
+   * Processes multiple records with processors.
+   * @param key_proc_pairs Pairs of the keys and their processor objects.  Their "process" method
+   * is called.  The first parameter is the key of the record.  The second parameter is the value
+   * of the existing record, or null if it the record doesn't exist.  The return value is a byte
+   * array to update the record value.  If the return value is null, the record is not modified.
+   * If the return value is REMOVE, the record is removed.
+   * @param writable True if the processors can edit the records.
+   * @return The result status.
+  */
+  public native Status processMulti(RecordProcessor.WithKey[] key_proc_pairs, boolean writable);
+
+  /**
    * Compares the values of records and exchanges if the condition meets.
    * @param expected The record keys and their expected values.  If the value is null, no existing
    * record is expected.  If the value is ANY_BYTES, an existing record with any value is
@@ -691,6 +736,20 @@ public class DBM {
   public Status pushLast(String value, double wtime) {
     return pushLast(value.getBytes(StandardCharsets.UTF_8), wtime);
   }
+
+  /**
+   * Processes each and every record in the database with a processor.
+   * @param proc The processor object.  Its "process" method is called.  The first parameter is
+   * the key of the record.  The second parameter is the value of the existing record,
+   * or null if it the record doesn't exist.  The return value is a byte array to update the
+   * record value.  If the return value is null, the record is not modified.  If the return value
+   * is REMOVE, the record is removed.
+   * @param writable True if the processor can edit the record.
+   * @return The result status.
+   * @note The given function is called repeatedly for each record.  It is also called once
+   * before the iteration and once after the iteration with both the key and the value being null.
+   */
+  public native Status processEach(RecordProcessor proc, boolean writable);
 
   /**
    * Gets the number of records.
@@ -851,7 +910,10 @@ public class DBM {
    * extracts keys beginning with the pattern.  "end" extracts keys ending with the pattern.
    * "regex" extracts keys partially matches the pattern of a regular expression.  "edit"
    * extracts keys whose edit distance to the pattern is the least.  "editbin" extracts
-   * keys whose edit distance to the binary pattern is the least.
+   * keys whose edit distance to the binary pattern is the least.  "containcase", "containword",
+   * and "containcaseword" extract keys considering case and word boundary.  Ordered databases
+   * support "upper" and "lower" which extract keys whose positions are upper/lower than the
+   * pattern. "upperinc" and "lowerinc" are their inclusive versions.
    * @param pattern The pattern for matching.
    * @param capacity The maximum records to obtain.  0 means unlimited.
    * @return An array of keys matching the condition.
@@ -864,7 +926,10 @@ public class DBM {
    * extracts keys beginning with the pattern.  "end" extracts keys ending with the pattern.
    * "regex" extracts keys partially matches the pattern of a regular expression.  "edit"
    * extracts keys whose edit distance to the UTF-8 pattern is the least.  "editbin" extracts
-   * keys whose edit distance to the binary pattern is the least.
+   * keys whose edit distance to the binary pattern is the least.  "containcase", "containword",
+   * and "containcaseword" extract keys considering case and word boundary.  Ordered databases
+   * support "upper" and "lower" which extract keys whose positions are upper/lower than the
+   * pattern. "upperinc" and "lowerinc" are their inclusive versions.
    * @param pattern The pattern for matching.
    * @param capacity The maximum records to obtain.  0 means unlimited.
    * @return An array of keys matching the condition.
@@ -899,10 +964,13 @@ public class DBM {
    * @param endOffset The exclusive end offset of records to read.  Negative means unlimited.
    * 0 means the size when the database is synched or closed properly.  Using a positive value
    * is not meaningful if the number of shards is more than one.
+   * @param cipherKey The encryption key for cipher compressors.  If it is null, an empty key
+   * is used.
    * @return The result status.
    */
   public static native Status restoreDatabase(
-      String oldFilePath, String newFilePath, String className, long endOffset);
+      String oldFilePath, String newFilePath, String className,
+      long endOffset, byte[] cipherKey);
 
   /** The pointer to the native object */
   private long ptr_ = 0;

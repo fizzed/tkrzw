@@ -41,7 +41,6 @@ public class blaze {
         final String exename = nativeTarget.resolveExecutableFileName("jcat");
         final String libname = nativeTarget.resolveLibraryFileName("helloj");*/
 
-        String autoConfTarget = "";
         String buildScript = "setup/build-native-lib-linux-action.sh";
         if (nativeTarget.getOperatingSystem() == OperatingSystem.MACOS) {
             buildScript = "setup/build-native-lib-macos-action.sh";
@@ -49,10 +48,11 @@ public class blaze {
             buildScript = "setup/build-native-lib-windows-action.bat";
         }
 
-        if (nativeTarget.getOperatingSystem() == OperatingSystem.FREEBSD) {
-            autoConfTarget = "x86_64-pc-freebsd";
-        } else if (nativeTarget.getOperatingSystem() == OperatingSystem.OPENBSD) {
-            autoConfTarget = "x86_64-pc-openbsd";
+        String autoConfTarget = "";
+        try {
+            autoConfTarget = nativeTarget.toAutoConfTarget();
+        } catch (IllegalArgumentException e) {
+            autoConfTarget = "unknown";
         }
 
         exec(buildScript, nativeTarget.toJneOsAbi(), nativeTarget.toJneArch(), autoConfTarget)
@@ -147,7 +147,7 @@ public class blaze {
             .setTags("build", "test")
             .setHost("bmh-build-x64-freebsd12-1"),
 
-        new Target("freebsd", "arm64")
+        *new Target("freebsd", "arm64")
             .setTags("build", "test")
             .setHost("bmh-build-arm64-freebsd13-1"),*/
 

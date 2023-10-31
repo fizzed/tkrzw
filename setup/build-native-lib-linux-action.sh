@@ -18,7 +18,7 @@ mkdir -p target
 rsync -avrt --delete ./native/ ./target/
 
 # zlib dependency (only on containers though)
-if [ -d /project ]; then
+#if [ -d /project ]; then
   cd target
   tar zxvf zlib-1.3.tar.gz
   cd zlib-1.3
@@ -33,7 +33,7 @@ if [ -d /project ]; then
 
   #make install
   cd ../../
-fi
+#fi
 
 export CFLAGS="$CFLAGS -Wa,--noexecstack"
 export CXXFLAGS="$CXXFLAGS -Wa,--noexecstack"
@@ -41,7 +41,7 @@ export CXXFLAGS="$CXXFLAGS -Wa,--noexecstack"
 # tkrzw dependency
 cd ./target/tkrzw
 ./configure --host $BUILDTARGET --enable-zlib
-make -j4
+make -j4 libtkrzw.a libtkrzw.so
 
 # force static lib to be included in libjtkrzw
 rm -f ./*.so

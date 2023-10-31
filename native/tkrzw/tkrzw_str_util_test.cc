@@ -371,6 +371,124 @@ TEST(StrUtilTest, StrContains) {
   EXPECT_FALSE(tkrzw::StrContains("abc", "ac"));
 }
 
+TEST(StrUtilTest, StrCaseContains) {
+  EXPECT_TRUE(tkrzw::StrCaseContains("", ""));
+  EXPECT_TRUE(tkrzw::StrCaseContains("aBc", ""));
+  EXPECT_TRUE(tkrzw::StrCaseContains("aBc", "A"));
+  EXPECT_TRUE(tkrzw::StrCaseContains("aBc", "Ab"));
+  EXPECT_TRUE(tkrzw::StrCaseContains("aBc", "Abc"));
+  EXPECT_TRUE(tkrzw::StrCaseContains("aBcd", "bC"));
+  EXPECT_TRUE(tkrzw::StrCaseContains("aBcd", "Cd"));
+  EXPECT_TRUE(tkrzw::StrCaseContains("aBcd", "D"));
+  EXPECT_FALSE(tkrzw::StrCaseContains("aBc", "aBcd"));
+  EXPECT_FALSE(tkrzw::StrCaseContains("aBc", "xa"));
+  EXPECT_FALSE(tkrzw::StrCaseContains("aBc", "ac"));
+}
+
+TEST(StrUtilTest, StrWordContains) {
+  EXPECT_TRUE(tkrzw::StrWordContains("hop step jump", ""));
+  EXPECT_TRUE(tkrzw::StrWordContains("hop step jump", "hop"));
+  EXPECT_TRUE(tkrzw::StrWordContains("hop step jump", "step"));
+  EXPECT_TRUE(tkrzw::StrWordContains("hop step jump", "jump"));
+  EXPECT_TRUE(tkrzw::StrWordContains("hop step jump", "hop step"));
+  EXPECT_TRUE(tkrzw::StrWordContains("hop step jump", "hop step jump"));
+  EXPECT_FALSE(tkrzw::StrWordContains("hop step jump", "ho"));
+  EXPECT_FALSE(tkrzw::StrWordContains("hop step jump", "op"));
+  EXPECT_FALSE(tkrzw::StrWordContains("hop step jump", "ste"));
+  EXPECT_FALSE(tkrzw::StrWordContains("hop step jump", "tep"));
+  EXPECT_FALSE(tkrzw::StrWordContains("hop step jump", "ump"));
+  EXPECT_FALSE(tkrzw::StrWordContains("hop step jump", "jumper"));
+  EXPECT_FALSE(tkrzw::StrWordContains("hop step jump", "p s"));
+  EXPECT_TRUE(tkrzw::StrWordContains("hop step jump st", "st"));
+}
+
+TEST(StrUtilTest, StrCaseWordContains) {
+  EXPECT_TRUE(tkrzw::StrCaseWordContains("hOp sTep jumP", ""));
+  EXPECT_TRUE(tkrzw::StrCaseWordContains("hOp sTep jumP", "hoP"));
+  EXPECT_TRUE(tkrzw::StrCaseWordContains("hOp sTep jumP", "stEp"));
+  EXPECT_TRUE(tkrzw::StrCaseWordContains("hOp sTep jumP", "jump"));
+  EXPECT_TRUE(tkrzw::StrCaseWordContains("hOp sTep jumP", "HOP STEP"));
+  EXPECT_TRUE(tkrzw::StrCaseWordContains("hOp sTep jumP", "Hop step jump"));
+  EXPECT_FALSE(tkrzw::StrCaseWordContains("hOp sTep jumP", "ho"));
+  EXPECT_FALSE(tkrzw::StrCaseWordContains("hOp sTep jumP", "op"));
+  EXPECT_FALSE(tkrzw::StrCaseWordContains("hOp sTep jumP", "ste"));
+  EXPECT_FALSE(tkrzw::StrCaseWordContains("hOp sTep jumP", "tep"));
+  EXPECT_FALSE(tkrzw::StrCaseWordContains("hOp sTep jumP", "ump"));
+  EXPECT_FALSE(tkrzw::StrCaseWordContains("hOp sTep jumP", "jumper"));
+  EXPECT_FALSE(tkrzw::StrCaseWordContains("hOp sTep jumP", "p s"));
+  EXPECT_TRUE(tkrzw::StrCaseWordContains("hOp sTep jumP ST", "st"));
+}
+
+TEST(StrUtilTest, StrContainsBatch) {
+  EXPECT_FALSE(tkrzw::StrContainsBatch("", std::vector<std::string>({})));
+  EXPECT_TRUE(tkrzw::StrContainsBatch("", std::vector<std::string>({""})));
+  EXPECT_FALSE(tkrzw::StrContainsBatch("abcdef", std::vector<std::string>({"123"})));
+  EXPECT_TRUE(tkrzw::StrContainsBatch("abcdef", std::vector<std::string>({"123", "abc"})));
+  EXPECT_TRUE(tkrzw::StrContainsBatch("abcdef", std::vector<std::string>({"bcd", "123"})));
+}
+
+TEST(StrUtilTest, StrCaseContainsBatch) {
+  EXPECT_FALSE(tkrzw::StrCaseContainsBatch("", std::vector<std::string>({})));
+  EXPECT_TRUE(tkrzw::StrCaseContainsBatch("", std::vector<std::string>({""})));
+  EXPECT_FALSE(tkrzw::StrCaseContainsBatch("AbCdEf", std::vector<std::string>({"123"})));
+  EXPECT_TRUE(tkrzw::StrCaseContainsBatch("AbCdEf", std::vector<std::string>({"123", "aBc"})));
+  EXPECT_TRUE(tkrzw::StrCaseContainsBatch("AbCdEf", std::vector<std::string>({"BcD", "123"})));
+}
+
+TEST(StrUtilTest, StrWordContainsBatch) {
+  EXPECT_FALSE(tkrzw::StrWordContainsBatch("", std::vector<std::string>({})));
+  EXPECT_TRUE(tkrzw::StrWordContainsBatch("", std::vector<std::string>({""})));
+  EXPECT_FALSE(tkrzw::StrWordContainsBatch("abc def", std::vector<std::string>({"123"})));
+  EXPECT_TRUE(tkrzw::StrWordContainsBatch("abc def", std::vector<std::string>({"123", "abc"})));
+  EXPECT_TRUE(tkrzw::StrWordContainsBatch("abc def", std::vector<std::string>({"123", "def"})));
+  EXPECT_TRUE(tkrzw::StrWordContainsBatch("abc def", std::vector<std::string>({"abc def"})));
+  EXPECT_FALSE(tkrzw::StrWordContainsBatch("abc def", std::vector<std::string>({"bc", "123"})));
+  EXPECT_FALSE(tkrzw::StrWordContainsBatch("abc def", std::vector<std::string>({"ab", "123"})));
+  EXPECT_TRUE(tkrzw::StrWordContainsBatch("abc def ab", std::vector<std::string>({"ab", "123"})));
+}
+
+TEST(StrUtilTest, StrCaseWordContainsBatch) {
+  EXPECT_FALSE(tkrzw::StrCaseWordContainsBatch("", std::vector<std::string>({})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatch("", std::vector<std::string>({""})));
+  EXPECT_FALSE(tkrzw::StrCaseWordContainsBatch(
+      "aBc DeF", std::vector<std::string>({"123"})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatch(
+      "aBc DeF", std::vector<std::string>({"123", "AbC"})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatch(
+      "aBc DeF", std::vector<std::string>({"123", "dEf"})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatch(
+      "aBc DeF", std::vector<std::string>({"AbC def"})));
+  EXPECT_FALSE(tkrzw::StrCaseWordContainsBatch(
+      "aBc DeF", std::vector<std::string>({"bc", "123"})));
+  EXPECT_FALSE(tkrzw::StrCaseWordContainsBatch(
+      "aBc DeF", std::vector<std::string>({"ab", "123"})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatch(
+      "aBc DeF Ab", std::vector<std::string>({"AB", "123"})));
+}
+
+TEST(StrUtilTest, StrCaseWordContainsBatchLower) {
+  EXPECT_FALSE(tkrzw::StrCaseWordContainsBatchLower("", std::vector<std::string>({})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatchLower("", std::vector<std::string>({""})));
+  EXPECT_FALSE(tkrzw::StrCaseWordContainsBatchLower(
+      "aBc DeF", std::vector<std::string>({"123"})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatchLower(
+      "aBc DeF", std::vector<std::string>({"123", "abc"})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatchLower(
+      "aBc DeF", std::vector<std::string>({"123", "def"})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatchLower(
+      "aBc DeF", std::vector<std::string>({"abc def"})));
+  EXPECT_FALSE(tkrzw::StrCaseWordContainsBatchLower(
+      "aBc DeF", std::vector<std::string>({"bc", "123"})));
+  EXPECT_FALSE(tkrzw::StrCaseWordContainsBatchLower(
+      "aBc DeF", std::vector<std::string>({"ab", "123"})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatchLower(
+      "aBc DeF Ab", std::vector<std::string>({"ab", "123"})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatchLower(
+      "aBc DeF Ab", std::vector<std::string>({"ab", "123"})));
+  EXPECT_TRUE(tkrzw::StrCaseWordContainsBatchLower(
+      "aBc DeF Ab-", std::vector<std::string>({"ab", "123"})));
+}
+
 TEST(StrUtilTest, StrBeginsWith) {
   EXPECT_TRUE(tkrzw::StrBeginsWith("", ""));
   EXPECT_TRUE(tkrzw::StrBeginsWith("abc", ""));
@@ -613,6 +731,58 @@ TEST_P(StrSearchBatchRandomTest, StrSearchBatchRandom) {
 INSTANTIATE_TEST_SUITE_P(StrSearchBatchRandom, StrSearchBatchRandomTest, Values(
     tkrzw::StrSearchBatchKMP, tkrzw::StrSearchBatchBM, tkrzw::StrSearchBatchRK));
 
+TEST(StrUtilTest, StrCaseSearch) {
+  EXPECT_EQ(0, tkrzw::StrCaseSearch("ABCDEFGHIJ", ""));
+  EXPECT_EQ(0, tkrzw::StrCaseSearch("ABCDEFGHIJ", "A"));
+  EXPECT_EQ(0, tkrzw::StrCaseSearch("ABCDEFGHIJ", "AB"));
+  EXPECT_EQ(1, tkrzw::StrCaseSearch("ABCDEFGHIJ", "B"));
+  EXPECT_EQ(1, tkrzw::StrCaseSearch("ABCDEFGHIJ", "BC"));
+  EXPECT_EQ(2, tkrzw::StrCaseSearch("ABCDEFGHIJ", "cde"));
+  EXPECT_EQ(2, tkrzw::StrCaseSearch("abcdefghij", "CDE"));
+  EXPECT_EQ(9, tkrzw::StrCaseSearch("abcdefghij", "J"));
+  EXPECT_EQ(9, tkrzw::StrCaseSearch("abcdefghij", "j"));
+  EXPECT_EQ(8, tkrzw::StrCaseSearch("abcdefghij", "IJ"));
+  EXPECT_EQ(0, tkrzw::StrCaseSearch("abcdefghij", "ABCDEFGHIJ"));
+  EXPECT_EQ(-1, tkrzw::StrCaseSearch("abcdefghij", "ABCDEFGHIJK"));
+  EXPECT_EQ(-1, tkrzw::StrCaseSearch("abcdefghij", "ABD"));
+  EXPECT_EQ(-1, tkrzw::StrCaseSearch("abcdefghij", "IJK"));
+  EXPECT_EQ(-1, tkrzw::StrCaseSearch("abcdefghij", "X"));
+}
+
+TEST(StrUtilTest, StrWordSearch) {
+  EXPECT_EQ(0, tkrzw::StrWordSearch("hop step jump", ""));
+  EXPECT_EQ(0, tkrzw::StrWordSearch("hop step jump", "hop"));
+  EXPECT_EQ(4, tkrzw::StrWordSearch("hop step jump", "step"));
+  EXPECT_EQ(9, tkrzw::StrWordSearch("hop step jump", "jump"));
+  EXPECT_EQ(0, tkrzw::StrWordSearch("hop step jump", "hop step"));
+  EXPECT_EQ(0, tkrzw::StrWordSearch("hop step jump", "hop step jump"));
+  EXPECT_EQ(3, tkrzw::StrWordSearch("hop step jump", " step "));
+  EXPECT_EQ(-1, tkrzw::StrWordSearch("hop step jump", "ho"));
+  EXPECT_EQ(-1, tkrzw::StrWordSearch("hop step jump", "op"));
+  EXPECT_EQ(-1, tkrzw::StrWordSearch("hop step jump", "ste"));
+  EXPECT_EQ(-1, tkrzw::StrWordSearch("hop step jump", "tep"));
+  EXPECT_EQ(-1, tkrzw::StrWordSearch("hop step jump", "ump"));
+  EXPECT_EQ(-1, tkrzw::StrWordSearch("hop step jump", "jumper"));
+  EXPECT_EQ(-1, tkrzw::StrWordSearch("hop step jump", "p s"));
+}
+
+TEST(StrUtilTest, StrCaseWordSearch) {
+  EXPECT_EQ(0, tkrzw::StrCaseWordSearch("hOp sTep jumP", ""));
+  EXPECT_EQ(0, tkrzw::StrCaseWordSearch("hOp sTep jumP", "hoP"));
+  EXPECT_EQ(4, tkrzw::StrCaseWordSearch("hOp sTep jumP", "stEp"));
+  EXPECT_EQ(9, tkrzw::StrCaseWordSearch("hOp sTep jumP", "jump"));
+  EXPECT_EQ(0, tkrzw::StrCaseWordSearch("hOp sTep jumP", "HOP STEP"));
+  EXPECT_EQ(0, tkrzw::StrCaseWordSearch("hOp sTep jumP", "Hop step jump"));
+  EXPECT_EQ(3, tkrzw::StrCaseWordSearch("hOp sTep jumP", " SteP "));
+  EXPECT_EQ(-1, tkrzw::StrCaseWordSearch("hOp sTep jumP", "ho"));
+  EXPECT_EQ(-1, tkrzw::StrCaseWordSearch("hOp sTep jumP", "op"));
+  EXPECT_EQ(-1, tkrzw::StrCaseWordSearch("hOp sTep jumP", "ste"));
+  EXPECT_EQ(-1, tkrzw::StrCaseWordSearch("hOp sTep jumP", "tep"));
+  EXPECT_EQ(-1, tkrzw::StrCaseWordSearch("hOp sTep jumP", "ump"));
+  EXPECT_EQ(-1, tkrzw::StrCaseWordSearch("hOp sTep jumP", "jumper"));
+  EXPECT_EQ(-1, tkrzw::StrCaseWordSearch("hOp sTep jumP", "p s"));
+}
+
 TEST(StrUtilTest, StrStripSpace) {
   EXPECT_EQ("", tkrzw::StrStripSpace(""));
   EXPECT_EQ("ABC", tkrzw::StrStripSpace("  ABC  "));
@@ -777,6 +947,12 @@ TEST(StrUtilTest, StrSearchRegex) {
   EXPECT_EQ(-1, tkrzw::StrSearchRegex("abc", "d"));
   EXPECT_EQ(2, tkrzw::StrSearchRegex("abcdabcd", "c"));
   EXPECT_EQ(3, tkrzw::StrSearchRegex("あいうえお", "いうえ"));
+  EXPECT_EQ(-1, tkrzw::StrSearchRegex("abcd", "BC"));
+  EXPECT_EQ(1, tkrzw::StrSearchRegex("abcd", "(?i)BC"));
+  EXPECT_EQ(0, tkrzw::StrSearchRegex("abcde", "(?ei)^A(b|c).+[E-F]$"));
+  EXPECT_EQ(0, tkrzw::StrSearchRegex("abcde", "(?bi)^A\\(b\\).\\{1,3\\}[E-F]$"));
+  EXPECT_EQ(-2, tkrzw::StrSearchRegex("abcde", "(?ii"));
+  EXPECT_EQ(-2, tkrzw::StrSearchRegex("abcde", "(?ixyz)"));
 }
 
 TEST(StrUtilTest, StrReplaceRegex) {
@@ -788,8 +964,15 @@ TEST(StrUtilTest, StrReplaceRegex) {
   EXPECT_EQ("a[bc]d", tkrzw::StrReplaceRegex("abcd", "bc", "[$&]"));
   EXPECT_EQ("a[]d", tkrzw::StrReplaceRegex("abcd", "bc", "[$3]"));
   EXPECT_EQ("a[bc]D[ef]g", tkrzw::StrReplaceRegex("abcdefg", "(bc)d(ef)", "[$1]D[$2]"));
+  EXPECT_EQ("xxxdex", tkrzw::StrReplaceRegex("abcdef", "([a-c]|f)", "x"));
   EXPECT_EQ("あ[いう]エ[おか]き", tkrzw::StrReplaceRegex(
       "あいうえおかき", "(いう)え(おか)", "[$1]エ[$2]"));
+  EXPECT_EQ("abcd", tkrzw::StrReplaceRegex("abcd", "BC", "*"));
+  EXPECT_EQ("a*d", tkrzw::StrReplaceRegex("abcd", "(?i)BC", "*"));
+  EXPECT_EQ("X-b", tkrzw::StrReplaceRegex("abcde", "(?ei)^A(b|c).+[E-F]$", "X-$1"));
+  EXPECT_EQ("X-b", tkrzw::StrReplaceRegex("abcde", "(?bi)^A\\(b\\).\\{1,3\\}[E-F]$", "X-$1"));
+  EXPECT_EQ("", tkrzw::StrReplaceRegex("abcde", "(?ii", "*"));
+  EXPECT_EQ("", tkrzw::StrReplaceRegex("abcde", "(?ixyz)", "*"));
 }
 
 TEST(StrUtilTest, ConvertUTF8AndUCS4) {
