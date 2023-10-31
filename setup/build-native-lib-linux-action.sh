@@ -1,5 +1,5 @@
-#!/bin/bash -lex
-# shell w/ login & interactive, exit if any command fails, log each command
+#!/bin/sh
+set -e
 
 BASEDIR=$(dirname "$0")
 cd "$BASEDIR/.."
