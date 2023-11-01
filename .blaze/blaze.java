@@ -30,58 +30,29 @@ public class blaze {
         final NativeTarget nativeTarget = targetStr != null ? NativeTarget.fromJneTarget(targetStr) : NativeTarget.detect();
 
         log.info("Building natives for target {}", nativeTarget.toJneTarget());
+
         log.info("Copying native code to (cleaned) {} directory...", targetDir);
         rm(targetDir).recursive().force().run();
         mkdir(targetDir).parents().run();
         cp(globber(nativeDir, "*")).target(targetDir).recursive().debug().run();
 
-        /*final Path targetJcatDir = targetDir.resolve("jcat");
-        final Path targetLibHelloJDir = targetDir.resolve("libhelloj");
-        final Path javaOutputDir = withBaseDir("../src/test/resources/jne/" + nativeTarget.toJneOsAbi() + "/" + nativeTarget.toJneArch());
-        final String exename = nativeTarget.resolveExecutableFileName("jcat");
-        final String libname = nativeTarget.resolveLibraryFileName("helloj");*/
-
-        String buildScript = "setup/build-native-lib-linux-action.sh";
+        final String buildScript;
+        final String autoConfTarget;
         if (nativeTarget.getOperatingSystem() == OperatingSystem.MACOS) {
             buildScript = "setup/build-native-lib-macos-action.sh";
+            autoConfTarget = "";
         } else if (nativeTarget.getOperatingSystem() == OperatingSystem.WINDOWS) {
             buildScript = "setup/build-native-lib-windows-action.bat";
-        }
-
-        String autoConfTarget = "";
-        try {
+            autoConfTarget = "";
+        } else {
+            buildScript = "setup/build-native-lib-linux-action.sh";
             autoConfTarget = nativeTarget.toAutoConfTarget();
-        } catch (IllegalArgumentException e) {
-            autoConfTarget = "unknown";
         }
 
         exec(buildScript, nativeTarget.toJneOsAbi(), nativeTarget.toJneArch(), autoConfTarget)
             .workingDir(this.projectDir)
             .verbose()
             .run();
-
-        /*if (nativeTarget.getOperatingSystem() == OperatingSystem.WINDOWS) {
-            // unfortunately its easiest to delegate this to helper script
-            exec("setup/build-native-lib-windows-action.bat", nativeTarget.toJneOsAbi(), nativeTarget.toJneArch())
-                .workingDir(this.projectDir)
-                .verbose()
-                .run();
-        } else {
-            String cmd = "make";
-            // freebsd and openbsd, we need to use gmake
-            if (nativeTarget.getOperatingSystem() == OperatingSystem.FREEBSD || nativeTarget.getOperatingSystem() == OperatingSystem.OPENBSD) {
-                cmd = "gmake";
-            }
-
-            log.info("Building jcat executable...");
-            exec(cmd).workingDir(targetJcatDir).debug().run();
-
-            log.info("Building helloj library...");
-            exec(cmd).workingDir(targetLibHelloJDir).debug().run();
-        }
-
-        cp(targetJcatDir.resolve(exename)).target(javaOutputDir).force().verbose().run();
-        cp(targetLibHelloJDir.resolve(libname)).target(javaOutputDir).force().verbose().run();*/
     }
 
     @Task(order = 2)
@@ -226,10 +197,12 @@ public class blaze {
 
         new Target("linux", "armhf", "Ubuntu 18.04, JDK 11")
             .setTags("test")
+            .setHost("bmh-build-arm64-armbian22-2")
             .setContainerImage("fizzed/buildx:armhf-ubuntu18-jdk11"),
 
         new Target("linux", "armel", "Ubuntu 18.04, JDK 11")
             .setTags("test")
+            .setHost("bmh-build-arm64-armbian22-2")
             .setContainerImage("fizzed/buildx:armel-debian11-jdk11"),
 
         new Target("linux", "riscv64", "Debian 11, JDK 21")
@@ -246,6 +219,7 @@ public class blaze {
 
         new Target("linux_musl", "arm64", "Alpine 3.11, JDK 11")
             .setTags("test")
+            .setHost("bmh-build-arm64-armbian22-2")
             //.setHost("bmh-build-arm64-ubuntu22-1")
             .setContainerImage("fizzed/buildx:arm64-alpine3.11-jdk11"),
 
@@ -285,20 +259,14 @@ public class blaze {
         new Buildx(crossTargets)
             .tags("build")
             .execute((target, project) -> {
-                /*String buildScript = "setup/build-native-lib-linux-action.sh";
-                if (target.getOs().equals("macos")) {
-                    buildScript = "setup/build-native-lib-macos-action.sh";
-                } else if (target.getOs().equals("windows")) {
-                    buildScript = "setup/build-native-lib-windows-action.bat";
-                }
-
-                project.action(buildScript, target.getOs(), target.getArch()).run();*/
-
-                project.action("java", "-jar", "blaze.jar", "build_natives", "--target", target.getOsArch()).run();
+                // delegate to blaze
+                project.action("java", "-jar", "blaze.jar", "build_natives", "--target", target.getOsArch())
+                    .run();
 
                 // we know that the only modified file will be in the artifact dir
                 final String artifactRelPath = "tkrzw-" + target.getOsArch() + "/src/main/resources/jne/" + target.getOs() + "/" + target.getArch() + "/";
-                project.rsync(artifactRelPath, artifactRelPath).run();
+                project.rsync(artifactRelPath, artifactRelPath)
+                    .run();
             });
     }
 
