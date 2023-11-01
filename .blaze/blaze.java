@@ -192,17 +192,17 @@ public class blaze {
 
         new Target("linux", "arm64", "Ubuntu 18.04, JDK 11")
             .setTags("test")
-            .setHost("bmh-build-arm64-armbian22-2")
+            .setHost("bmh-hv-6")
             .setContainerImage("fizzed/buildx:arm64-ubuntu18-jdk11"),
 
         new Target("linux", "armhf", "Ubuntu 18.04, JDK 11")
             .setTags("test")
-            .setHost("bmh-build-arm64-armbian22-2")
+            .setHost("bmh-hv-6")
             .setContainerImage("fizzed/buildx:armhf-ubuntu18-jdk11"),
 
         new Target("linux", "armel", "Ubuntu 18.04, JDK 11")
             .setTags("test")
-            .setHost("bmh-build-arm64-armbian22-2")
+            .setHost("bmh-hv-6")
             .setContainerImage("fizzed/buildx:armel-debian11-jdk11"),
 
         new Target("linux", "riscv64", "Debian 11, JDK 21")
@@ -219,8 +219,7 @@ public class blaze {
 
         new Target("linux_musl", "arm64", "Alpine 3.11, JDK 11")
             .setTags("test")
-            .setHost("bmh-build-arm64-armbian22-2")
-            //.setHost("bmh-build-arm64-ubuntu22-1")
+            .setHost("bmh-hv-6")
             .setContainerImage("fizzed/buildx:arm64-alpine3.11-jdk11"),
 
         //
