@@ -4,4 +4,4 @@ nb-configuration.xml
 *.idea
 .temp-m2
 .buildx
-.buildx-temp
+.buildx-cache

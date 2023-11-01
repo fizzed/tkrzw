@@ -86,7 +86,7 @@ public class blaze {
 
     @Task(order = 2)
     public void test() throws Exception {
-        exec("mvn", "test")
+        exec("mvn", "clean", "test")
             .workingDir(this.projectDir)
             .verbose()
             .run();
@@ -107,23 +107,23 @@ public class blaze {
         // Linux (18.04 supports libatomic, c++17)
         //
 
-        new Target("linux", "x64", "ubuntu18.04, jdk11")
+        new Target("linux", "x64", "x64 Ubuntu 18.04, JDK 11 cross compiler")
             .setTags("build")
             .setContainerImage("fizzed/buildx:x64-ubuntu18-jdk11-buildx-linux-x64"),
 
-        new Target("linux", "arm64", "ubuntu18.04, jdk11")
+        new Target("linux", "arm64", "x64 Ubuntu 18.04, JDK 11 cross compiler")
             .setTags("build")
             .setContainerImage("fizzed/buildx:x64-ubuntu18-jdk11-buildx-linux-arm64"),
 
-        new Target("linux", "armhf", "ubuntu18.04, jdk11")
+        new Target("linux", "armhf", "x64 Ubuntu 18.04, JDK 11 cross compiler")
             .setTags("build")
             .setContainerImage("fizzed/buildx:x64-ubuntu18-jdk11-buildx-linux-armhf"),
 
-        new Target("linux", "armel", "ubuntu18.04, jdk11")
+        new Target("linux", "armel", "x64 Ubuntu 18.04, JDK 11 cross compiler")
             .setTags("build")
             .setContainerImage("fizzed/buildx:x64-ubuntu18-jdk11-buildx-linux-armel"),
 
-        new Target("linux", "riscv64", "ubuntu18.04, jdk11")
+        new Target("linux", "riscv64", "x64 Ubuntu 18.04, JDK 11 cross compiler")
             .setTags("build")
             .setContainerImage("fizzed/buildx:x64-ubuntu18-jdk11-buildx-linux-riscv64"),
 
@@ -131,11 +131,11 @@ public class blaze {
         // Linux (w/ MUSL)
         //
 
-        new Target("linux_musl", "x64", "ubuntu18.04, jdk11")
+        new Target("linux_musl", "x64", "x64 Ubuntu 18.04, JDK 11 cross compiler")
             .setTags("build")
             .setContainerImage("fizzed/buildx:x64-ubuntu18-jdk11-buildx-linux_musl-x64"),
 
-        new Target("linux_musl", "arm64", "ubuntu18.04, jdk11")
+        new Target("linux_musl", "arm64", "x64 Ubuntu 18.04, JDK 11 cross compiler")
             .setTags("build")
             .setContainerImage("fizzed/buildx:x64-ubuntu18-jdk11-buildx-linux_musl-arm64"),
 
@@ -168,11 +168,11 @@ public class blaze {
         // MacOS
         //
 
-        new Target("macos", "x64")
+        new Target("macos", "x64", "MacOS 10.13")
             .setTags("build", "test")
             .setHost("bmh-build-x64-macos1013-1"),
 
-        new Target("macos", "arm64")
+        new Target("macos", "arm64", "MacOS 12")
             .setTags("build", "test")
             .setHost("bmh-build-arm64-macos12-1"),
 
@@ -180,11 +180,11 @@ public class blaze {
         // Windows
         //
 
-        new Target("windows", "x64", "win11")
+        new Target("windows", "x64", "Windows 11")
             .setTags("build", "test")
             .setHost("bmh-build-x64-win11-1"),
 
-        new Target("windows", "arm64")
+        new Target("windows", "arm64", "Windows 11")
             .setTags("build")
             .setHost("bmh-build-x64-win11-1"),
 
@@ -199,40 +199,40 @@ public class blaze {
         // CI/Test Linux
         //
 
-        new Target("linux", "x64", "ubuntu18.04, jdk11")
+        new Target("linux", "x64", "Ubuntu 18.04, JDK 11")
             .setTags("test")
             .setContainerImage("fizzed/buildx:x64-ubuntu18-jdk11"),
 
-        new Target("linux", "x64", "ubuntu22.04, jdk8")
+        new Target("linux", "x64", "Ubuntu 22.04, JDK 8")
             .setTags("test")
             .setContainerImage("fizzed/buildx:x64-ubuntu22-jdk8"),
 
-        new Target("linux", "x64", "ubuntu22.04, jdk11")
+        new Target("linux", "x64", "Ubuntu 22.04, JDK 11")
             .setTags("test")
             .setContainerImage("fizzed/buildx:x64-ubuntu22-jdk11"),
 
-        new Target("linux", "x64", "ubuntu22.04, jdk17")
+        new Target("linux", "x64", "Ubuntu 22.04, JDK 17")
             .setTags("test")
             .setContainerImage("fizzed/buildx:x64-ubuntu22-jdk17"),
 
-        new Target("linux", "x64", "ubuntu22.04, jdk21")
+        new Target("linux", "x64", "Ubuntu 22.04, JDK 21")
             .setTags("test")
             .setContainerImage("fizzed/buildx:x64-ubuntu22-jdk21"),
 
-        new Target("linux", "arm64", "ubuntu18.04, jdk11")
+        new Target("linux", "arm64", "Ubuntu 18.04, JDK 11")
             .setTags("test")
-            //.setHost("bmh-build-arm64-ubuntu22-1")
+            .setHost("bmh-build-arm64-armbian22-2")
             .setContainerImage("fizzed/buildx:arm64-ubuntu18-jdk11"),
 
-        new Target("linux", "armhf", "ubuntu18.04, jdk11")
+        new Target("linux", "armhf", "Ubuntu 18.04, JDK 11")
             .setTags("test")
             .setContainerImage("fizzed/buildx:armhf-ubuntu18-jdk11"),
 
-        new Target("linux", "armel", "ubuntu18.04, jdk11")
+        new Target("linux", "armel", "Ubuntu 18.04, JDK 11")
             .setTags("test")
-            .setContainerImage("fizzed/buildx:armel-ubuntu18-jdk11"),
+            .setContainerImage("fizzed/buildx:armel-debian11-jdk11"),
 
-        new Target("linux", "riscv64", "debian11, jdk21")
+        new Target("linux", "riscv64", "Debian 11, JDK 21")
             .setTags("test")
             .setHost("bmh-build-riscv64-debian11-1"),
 
@@ -240,24 +240,24 @@ public class blaze {
         // CI/Test Linux w/ MUSL
         //
 
-        new Target("linux_musl", "x64", "alpine3.11, jdk11")
+        new Target("linux_musl", "x64", "Alpine 3.11, JDK 11")
             .setTags("test")
             .setContainerImage("fizzed/buildx:x64-alpine3.11-jdk11"),
 
-        new Target("linux_musl", "arm64", "alpine3.11, jdk11")
+        new Target("linux_musl", "arm64", "Alpine 3.11, JDK 11")
             .setTags("test")
-            .setHost("bmh-build-arm64-ubuntu22-1")
+            //.setHost("bmh-build-arm64-ubuntu22-1")
             .setContainerImage("fizzed/buildx:arm64-alpine3.11-jdk11"),
 
         //
         // CI/Test Windows
         //
 
-        new Target("windows", "x64", "win10")
+        new Target("windows", "x64", "Windows 10")
             .setTags("test")
             .setHost("bmh-build-x64-win10-1"),
 
-        new Target("windows", "arm64", "win11")
+        new Target("windows", "arm64", "Windows 11")
             .setTags("test")
             .setHost("bmh-build-arm64-win11-1")
     );
