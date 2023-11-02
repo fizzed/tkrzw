@@ -376,6 +376,9 @@ TEST(LangCTest, Basic) {
 
 const char* proc_increment(void* arg, const char* key_ptr, int32_t key_size,
                            const char* value_ptr, int32_t value_size, int32_t* new_value_size) {
+  if (key_ptr == nullptr) {
+    return TKRZW_REC_PROC_NOOP;
+  }
   std::string* new_value = (std::string*)arg;
   int64_t num_value = 0;
   if (value_ptr != nullptr) {
@@ -693,7 +696,7 @@ TEST(LangCTest, RestoreDatabase) {
   }
   EXPECT_TRUE(tkrzw_dbm_close(dbm));
   EXPECT_TRUE(tkrzw_dbm_restore_database(
-      file_path.c_str(), restored_file_path.c_str(), NULL, -1));
+      file_path.c_str(), restored_file_path.c_str(), NULL, -1, ""));
   dbm = tkrzw_dbm_open(restored_file_path.c_str(), false, "");
   ASSERT_NE(nullptr, dbm);
   EXPECT_TRUE(tkrzw_dbm_is_healthy(dbm));
@@ -709,7 +712,7 @@ TEST(LangCTest, RestoreDatabase) {
   }
   EXPECT_TRUE(tkrzw_dbm_close(dbm));
   EXPECT_TRUE(tkrzw_dbm_restore_database(
-      file_path.c_str(), restored_file_path.c_str(), NULL, -1));
+      file_path.c_str(), restored_file_path.c_str(), NULL, -1, NULL));
   dbm = tkrzw_dbm_open(restored_file_path.c_str(), false, "num_shards=0");
   ASSERT_NE(nullptr, dbm);
   EXPECT_TRUE(tkrzw_dbm_is_healthy(dbm));
@@ -748,7 +751,7 @@ TEST(LangCTest, Sharding) {
   EXPECT_EQ(num_records, tkrzw_dbm_count(dbm));
   EXPECT_TRUE(tkrzw_dbm_close(dbm));
   EXPECT_TRUE(tkrzw_dbm_restore_database(
-      file_path.c_str(), restored_file_path.c_str(), NULL, -1));
+      file_path.c_str(), restored_file_path.c_str(), NULL, -1, NULL));
   for (int32_t i = 0; i < num_shards; i++) {
     const std::string shard_path = tkrzw::SPrintF(
         "%s-%05d-of-%05d", restored_file_path.c_str(),i, num_shards);

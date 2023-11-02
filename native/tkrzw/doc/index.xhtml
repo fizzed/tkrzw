@@ -234,6 +234,8 @@ $ sudo make install
 
 <p>"make check" is just for testing and it can take several minutes.  You can omit it.  If you build binary packages on resource-limited systems, use "make check-light" instead.  If you want to install the files under "/usr", specify "--prefix=/usr" with the configure script.</p>
 
+<p>On some UNIX-like systems including FreeBSD and Solaris, "make" defaults to bsdmake or other non-GNU make, so you might need to replace "make" with "gmake" in the above instructions.</p>
+
 <p>By default, the library and related files are installed under "/usr/local".</p>
 
 <pre><code class="language-shell-session"><![CDATA[/usr/local/lib/libtkrzw.a
@@ -1051,7 +1053,7 @@ int main(int argc, char** argv) {
 
 <p>The magic data and the package version data are used for identifying the kind of the file.  The two figures of the cyclic magic data are used to check consistency of the meta data.  The version data indicates the version of the Tkrzw package when the file is created.</p>
 
-<p>The static flags specifies flags which are not changed during lifetime of the database.  The first bit and the second bit represent the update mode.  0x1 means the in-place update mode.  0x2 means the appending update mode.  0x0 and 0x3 are invalid.  The third bit and the fourth bit represent the record CRC mode. 0x0 means no CRC.  0x1 means CRC-8.  0x2 means CRC-16.  0x3 means CRC-32.  The fifth bit, the sixth, and the seventh bit represent compression mode.  0x0 means no compression.  0x1 means ZLib.  0x2 means ZStd.  0x3 means LZ4.  0x4 means LZMA.</p>
+<p>The static flags specifies flags which are not changed during lifetime of the database.  The first bit and the second bit represent the update mode.  0x1 means the in-place update mode.  0x2 means the appending update mode.  0x0 and 0x3 are invalid.  The third bit and the fourth bit represent the record CRC mode. 0x0 means no CRC.  0x1 means CRC-8.  0x2 means CRC-16.  0x3 means CRC-32.  The fifth bit, the sixth, and the seventh bit represent compression mode.  0x0 means no compression.  0x1 means ZLib.  0x2 means ZStd.  0x3 means LZ4.  0x4 means LZMA.  0x5 means RC4.  0x6 means AES.</p>
 
 <p>The offset width specifies how many bytes are used to store an offset value.  Given the offset width W, the maximum value is 2^(W*8).  So, W=3 sets the maximum value 16,777,216 and W=4 sets it 4,294,967,296.  The offset width affects the size of the buckets and the footprint of each record.  The alignment power specifies the alignment of the offset value.  Given the alignment power P, the alignment is 2^P.  So, P=2 sets the alignment 4 and P=3 sets it 8.  The alignment affects the size of space for each record.  The maximum database size is determined as 2^(W*8+P).   The default value of the offset width is 4 and the default value of the alignment power is 3.  So, the maximum database size is 32GiB by default.</p>
 
@@ -2898,18 +2900,20 @@ int main(int argc, char** argv) {
 <dd><code>--in_place</code> : Uses in-place rather than pre-defined ones.</dd>
 <dd><code>--append</code> : Uses the appending mode rather than the in-place mode.</dd>
 <dd><code>--record_crc <var>num</var></code> : The record CRC mode: -1, 0, 8, 16, 32. (default: 0 or -1)</dd>
-<dd><code>--record_comp <var>str</var></code> : The record compression mode: default, none, zlib, zstd, lz4, lzma. (default: none or default)</dd>
+<dd><code>--record_comp <var>str</var></code> : The record compression mode: default, none, zlib, zstd, lz4, lzma, rc4, aes. (default: none or default)</dd>
 <dd><code>--offset_width <var>num</var></code> : The width to represent the offset of records. (default: 4 or -1)</dd>
 <dd><code>--align_pow <var>num</var></code> : Sets the power to align records. (default: 3 or -1)</dd>
 <dd><code>--buckets <var>num</var></code> : Sets the number of buckets for hashing. (default: 1048583 or -1)</dd>
+<dd><code>--cipher_key <var>str</var></code> : Sets the encryption key for cipher compressors. (default: empty)</dd>
 <dt>Tuning options for TreeDBM:</dt>
 <dd><code>--in_place</code> : Uses in-place rather than pre-defined ones.</dd>
 <dd><code>--append</code> : Uses appending rather than pre-defined ones.</dd>
 <dd><code>--record_crc <var>num</var></code> : The record CRC mode: -1, 0, 8, 16, 32. (default: 0 or -1)</dd>
-<dd><code>--record_comp <var>str</var></code> : The record compression mode: default, none, zlib, zstd, lz4, lzma. (default: none or default)</dd>
+<dd><code>--record_comp <var>str</var></code> : The record compression mode: default, none, zlib, zstd, lz4, lzma, rc4, aes. (default: none or default)</dd>
 <dd><code>--offset_width <var>num</var></code> : The width to represent the offset of records. (default: 4 or -1)</dd>
 <dd><code>--align_pow <var>num</var></code> : Sets the power to align records. (default: 10 or -1)</dd>
 <dd><code>--buckets <var>num</var></code> : Sets the number of buckets for hashing. (default: 131101 or -1)</dd>
+<dd><code>--cipher_key <var>str</var></code> : Sets the encryption key for cipher compressors. (default: empty)</dd>
 <dd><code>--max_page_size <var>num</var></code> : Sets the maximum size of a page. (default: 8130 or -1)</dd>
 <dd><code>--max_branches <var>num</var></code> : Sets the maximum number of branches of inner nodes. (default: 256 or -1)</dd>
 <dd><code>--comparator <var>func</var></code> : Sets the key comparator: lex, lexcase, dec, hex, real. (default: lex)</dd>
@@ -3014,13 +3018,14 @@ applet  A small application.
 <dt>Options for HashDBM:</dt>
 <dd><code>--append</code> : Uses appending rather than pre-defined ones.</dd>
 <dd><code>--record_crc <var>num</var></code> : The record CRC mode: -1, 0, 8, 16, 32. (default: 0 or -1)</dd>
-<dd><code>--record_comp <var>str</var></code> : The record compression mode: default, none, zlib, zstd, lz4, lzma. (default: none or default)</dd>
+<dd><code>--record_comp <var>str</var></code> : The record compression mode: default, none, zlib, zstd, lz4, lzma, rc4, aes. (default: none or default)</dd>
 <dd><code>--offset_width <var>num</var></code> : The width to represent the offset of records. (default: 4)</dd>
 <dd><code>--align_pow <var>num</var></code> : Sets the power to align records. (default: 3)</dd>
 <dd><code>--buckets <var>num</var></code> : Sets the number of buckets for hashing. (default: 1048583)</dd>
 <dd><code>--fbp_cap <var>num</var></code> : Sets the capacity of the free block pool. (default: 2048)</dd>
 <dd><code>--min_read_size <var>num</var></code> : Sets the minimum reading size to read a record. (default: -1)</dd>
 <dd><code>--cache_buckets</code> : Caches the hash buckets on memory.</dd>
+<dd><code>--cipher_key <var>str</var></code> : Sets the encryption key for cipher compressors. (default: empty)</dd>
 <dt>Options for TreeDBM:</dt>
 <dd><code>--append</code> : Uses the appending mode rather than the in-place mode.</dd>
 <dd><code>--record_crc <var>num</var></code> : The record CRC mode: -1, 0, 8, 16, 32. (default: 0 or -1)</dd>
@@ -3030,6 +3035,7 @@ applet  A small application.
 <dd><code>--fbp_cap <var>num</var></code> : Sets the capacity of the free block pool. (default: 2048)</dd>
 <dd><code>--min_read_size <var>num</var></code> : Sets the minimum reading size to read a record. (default: -1)</dd>
 <dd><code>--cache_buckets</code> : Caches the hash buckets on memory.</dd>
+<dd><code>--cipher_key <var>str</var></code> : Sets the encryption key for cipher compressors. (default: empty)</dd>
 <dd><code>--max_page_size <var>num</var></code> : Sets the maximum size of a page. (default: 8130)</dd>
 <dd><code>--max_branches <var>num</var></code> : Sets the maximum number of branches of inner nodes. (default: 256)</dd>
 <dd><code>--max_cached_pages <var>num</var></code> : Sets the maximum number of cached pages. (default: 10000)</dd>
@@ -3336,7 +3342,7 @@ dbm.OpenAdvanced("casket.tkt", true, File::OPEN_DEFAULT, tuning_params);
 <li><strong>LZMA</strong> : A library known for the best compression.  Though compression ratio is better than ZLib and ZStd, the processing speed is much slower.</li>
 </ul>
 
-<p>If you tune the database to enable one of those algorithms, record data stored in the database is compressed.  When you retrieve the record, the data is decompressed automatically.  In HashDBM, compression is done for each record and only the record value is compressed.  Thus, compression is useful only if the record value is large.  In TreeDBM, compression is done for each page which includes multiple records.  Thus, compression is more useful in TreeDBM.</p>
+<p>You can enable a compressor by setting RECORD_COMP_ZLIB etc to record_comp_mode of TuningParameters.  If a compressor is enabled, record data stored in the database is compressed automatically.  When you retrieve the record, the data is decompressed automatically.  In HashDBM, compression is done for each record and only the record value is compressed.  Thus, compression is useful only if the record value is large.  In TreeDBM, compression is done for each page which includes multiple records.  Thus, compression is more useful in TreeDBM.</p>
 
 <p>Which algorithm is the best suited should be determined according to the data size, the data content, and the access pattern.  However, ZStd is the one you should try first.  If ZStd is not available on your platform, you use ZLib instead.  If you prefer faster speed, try LZ4.  If the database is almost read-only for archival usage, try LZMA.</p>
 
@@ -3396,6 +3402,55 @@ dbm.OpenAdvanced("casket.tkt", true, File::OPEN_DEFAULT, tuning_params);
 <td class="num">31,802 QPS</td>
 <td class="num">795,360 QPS</td>
 <td class="num">13.58 MB</td>
+</tr>
+</table>
+
+<h3 id="tips_encryption">Data Encryption for HashDBM and TreeDBM</h3>
+
+<p>Data encryption is also supported in the same mechanism as data compression.  As with the compressors, HashDBM encrypts only the value of each record and TreeDBM encrypts the keys and values of multiple records in each page.  Therefore, if you want to encrypt the key too, you should use TreeDBM.</p>
+
+<p>Available algorithms are RC4 and AES.  Both use a private key and an initial vector (IV) to encrypt each record.  You set the private key when you open a database.  A unique IV is generated for each record and stored with the record data.  RC4 (aka. ArcFour) is a streaming encryption algorithm.  It uses 6-bit IV.  AES (aka. Rijndael) is a block encryption algorithm.  It uses 16-bit IV and padding data.  In terms of space efficiency, RC4 is better than AES.  In terms of time efficiency, it depends.  If the length of the data to compress is longer than 3000 bytes, RC4 is faster.  In terms of cipher strength, AES is better.</p>
+
+<p>You can enable a compressor by setting RECORD_COMP_RC4 or RECORD_COMP_AES to record_comp_mode of TuningParameters.  You should also set a cipher key to cipher_key of TuningParameters.  If a cipherer is enabled, record data stored in the database is encrypted automatically.  When you retrieve the record, the data is decrypted automatically.  Note that the cipher key is not stored database and you must set the cipher key every time you open the database.</p>
+
+<p>To check performance, let's write and read 1 million records in HashDBM and TreeDBM.  The key is a 8-byte numeric string like "00000001" and "00000002".  The value is a 100-byte semi-random alphabet strings like "cvexgzibb...".</p>
+
+<table>
+<tr>
+<th>class</th>
+<th>Hash-Set</th>
+<th>Hash-Get</th>
+<th>Hash Size</th>
+<th>Tree-Set</th>
+<th>Tree-Get</th>
+<th>Tree Size</th>
+</tr>
+<tr>
+<td>Raw</td>
+<td class="num">1,515,645 QPS</td>
+<td class="num">1,950,478 QPS</td>
+<td class="num">114.63 MB</td>
+<td class="num">1,399,361 QPS</td>
+<td class="num">1,658,892 QPS</td>
+<td class="num">106.49 MB</td>
+</tr>
+<tr>
+<td>RC4</td>
+<td class="num">342,577 QPS</td>
+<td class="num">2,041,478 QPS</td>
+<td class="num">120.35 MB</td>
+<td class="num">1,100,026 QPS</td>
+<td class="num">1,187,321 QPS</td>
+<td class="num">106.65 MB</td>
+</tr>
+<tr>
+<td>AES</td>
+<td class="num">915,297 QPS</td>
+<td class="num">2,055,004 QPS</td>
+<td class="num">143.24 MB</td>
+<td class="num">1,001,877 QPS</td>
+<td class="num">1,045,518 QPS</td>
+<td class="num">107.29 MB</td>
 </tr>
 </table>
 

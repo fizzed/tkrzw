@@ -89,6 +89,35 @@ struct RecordProcessorWrapper : public DBM::RecordProcessor {
   }
 };
 
+struct RecordProcessorEachWrapper : public DBM::RecordProcessor {
+ public:
+  tkrzw_record_processor proc = nullptr;
+  void* arg = nullptr;
+  std::string_view ProcessFull(std::string_view key, std::string_view value) override {
+    int32_t new_value_size = 0;
+    const char* new_value_ptr =
+        proc(arg, key.data(), key.size(), value.data(), value.size(), &new_value_size);
+    if (new_value_ptr == TKRZW_REC_PROC_NOOP) {
+      return NOOP;
+    }
+    if (new_value_ptr == TKRZW_REC_PROC_REMOVE) {
+      return REMOVE;
+    }
+    return std::string_view(new_value_ptr, new_value_size);
+  }
+  std::string_view ProcessEmpty(std::string_view key) override {
+    int32_t new_value_size = 0;
+    const char* new_value_ptr = proc(arg, nullptr, -1, nullptr, -1, &new_value_size);
+    if (new_value_ptr == TKRZW_REC_PROC_NOOP) {
+      return NOOP;
+    }
+    if (new_value_ptr == TKRZW_REC_PROC_REMOVE) {
+      return REMOVE;
+    }
+    return std::string_view(new_value_ptr, new_value_size);
+  }
+};
+
 void tkrzw_set_last_status(int32_t code, const char* message) {
   if (message == nullptr) {
     last_status.Set(Status::Code(code));
@@ -1125,7 +1154,7 @@ bool tkrzw_dbm_process_each(
   assert(dbm != nullptr && proc != nullptr);
   try {
     ParamDBM* xdbm = reinterpret_cast<ParamDBM*>(dbm);
-    RecordProcessorWrapper xproc;
+    RecordProcessorEachWrapper xproc;
     xproc.proc = proc;
     xproc.arg = proc_arg;
     last_status = xdbm->ProcessEach(&xproc, writable);
@@ -1740,19 +1769,22 @@ bool tkrzw_dbm_iter_step(
 
 bool tkrzw_dbm_restore_database(
     const char* old_file_path, const char* new_file_path,
-    const char* class_name, int64_t end_offset) {
+    const char* class_name, int64_t end_offset, const char* cipher_key) {
   assert(old_file_path != nullptr && new_file_path != nullptr);
   try {
     if (class_name == nullptr) {
       class_name = "";
     }
+    if (cipher_key == nullptr) {
+      cipher_key = "";
+    }
     int32_t num_shards = 0;
     if (ShardDBM::GetNumberOfShards(old_file_path, &num_shards) == Status::SUCCESS) {
       last_status = ShardDBM::RestoreDatabase(
-          old_file_path, new_file_path, class_name, end_offset);
+          old_file_path, new_file_path, class_name, end_offset, cipher_key);
     } else {
       last_status = PolyDBM::RestoreDatabase(
-          old_file_path, new_file_path, class_name, end_offset);
+          old_file_path, new_file_path, class_name, end_offset, cipher_key);
     }
     return last_status == Status::SUCCESS;
   } catch (const std::exception& e) {

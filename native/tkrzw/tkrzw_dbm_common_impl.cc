@@ -83,6 +83,33 @@ Status SearchDBM(
   return dbm->ProcessEach(&exporter, false);
 }
 
+Status SearchDBMLambda(
+    DBM* dbm, std::function<bool(std::string_view)> matcher,
+    std::vector<std::string>* matched, size_t capacity) {
+  assert(dbm != nullptr && matched != nullptr);
+  if (capacity == 0) {
+    capacity = SIZE_MAX;
+  }
+  matched->clear();
+  class Exporter final : public DBM::RecordProcessor {
+   public:
+    Exporter(std::vector<std::string>* matched, size_t capacity,
+             std::function<bool(std::string_view)> matcher)
+        : matched_(matched), capacity_(capacity), matcher_(matcher) {}
+    std::string_view ProcessFull(std::string_view key, std::string_view value) override {
+      if (matched_->size() < capacity_ && matcher_(key)) {
+        matched_->emplace_back(std::string(key));
+      }
+      return NOOP;
+    }
+   private:
+    std::vector<std::string>* matched_;
+    size_t capacity_;
+    std::function<bool(std::string_view)> matcher_;
+  } exporter(matched, capacity, matcher);
+  return dbm->ProcessEach(&exporter, false);
+}
+
 Status SearchDBMOrder(DBM* dbm, std::string_view pattern, bool upper, bool inclusive,
                       std::vector<std::string>* matched, size_t capacity) {
   assert(dbm != nullptr && matched != nullptr);
@@ -148,7 +175,41 @@ Status SearchDBMRegex(
   assert(dbm != nullptr && matched != nullptr);
   std::unique_ptr<std::regex> regex;
   try {
-    regex = std::make_unique<std::regex>(pattern.begin(), pattern.end());
+    std::regex_constants::syntax_option_type options = std::regex_constants::optimize;
+    if (pattern.size() >= 2 && pattern[0] == '(' && pattern[1] == '?') {
+      bool ended = false;
+      size_t pos = 2;
+      while (!ended && pos < pattern.size()) {
+        switch (pattern[pos]) {
+          case 'a':
+            options |= std::regex_constants::awk;
+            break;
+          case 'b':
+            options |= std::regex_constants::basic;
+            break;
+          case 'e':
+            options |= std::regex_constants::extended;
+            break;
+          case 'i':
+            options |= std::regex_constants::icase;
+            break;
+          case 'l':
+            options |= std::regex_constants::egrep;
+            break;
+          case ')':
+            ended = true;
+            break;
+          default:
+            throw std::regex_error(std::regex_constants::error_complexity);
+        }
+        pos++;
+      }
+      if (!ended) {
+        throw std::regex_error(std::regex_constants::error_complexity);
+      }
+      pattern = pattern.substr(pos);
+    }
+    regex = std::make_unique<std::regex>(pattern.begin(), pattern.end(), options);
   } catch (const std::regex_error& err) {
     return Status(Status::INVALID_ARGUMENT_ERROR, StrCat("invalid regex: ", err.what()));
   }
@@ -267,6 +328,41 @@ Status SearchDBMModal(
     status = SearchDBMEditDistance(dbm, pattern, matched, capacity);
   } else if (mode == "editbin") {
     status = SearchDBMEditDistanceBinary(dbm, pattern, matched, capacity);
+  } else if (mode == "containcase") {
+    status = SearchDBM(dbm, pattern, matched, capacity, StrCaseContains);
+  } else if (mode == "containword") {
+    status = SearchDBM(dbm, pattern, matched, capacity, StrWordContains);
+  } else if (mode == "containcaseword") {
+    status = SearchDBM(dbm, pattern, matched, capacity, StrCaseWordContains);
+  } else if (mode == "contain*") {
+    const auto& patterns = StrSplit(pattern, '\n', true);
+    auto matcher = [=](std::string_view text) -> bool {
+      return StrContainsBatch(text, patterns);
+    };
+    status = SearchDBMLambda(dbm, matcher, matched, capacity);
+  } else if (mode == "containcase*") {
+    const auto& patterns = StrSplit(pattern, '\n', true);
+    auto matcher = [=](std::string_view text) -> bool {
+      return StrCaseContainsBatch(text, patterns);
+    };
+    status = SearchDBMLambda(dbm, matcher, matched, capacity);
+  } else if (mode == "containword*") {
+    const auto& patterns = StrSplit(pattern, '\n', true);
+    auto matcher = [=](std::string_view text) -> bool {
+      return StrWordContainsBatch(text, patterns);
+    };
+    status = SearchDBMLambda(dbm, matcher, matched, capacity);
+  } else if (mode == "containcaseword*") {
+    const auto& patterns = StrSplit(pattern, '\n', true);
+    std::vector<std::string> lower_patterns;
+    lower_patterns.reserve(patterns.size());
+    for (const auto& pattern : patterns) {
+      lower_patterns.emplace_back(StrLowerCase(pattern));
+    }
+    auto matcher = [=](std::string_view text) -> bool {
+      return StrCaseWordContainsBatchLower(text, lower_patterns);
+    };
+    status = SearchDBMLambda(dbm, matcher, matched, capacity);
   } else if (mode == "upper") {
     status = SearchDBMOrder(dbm, pattern, true, false, matched, capacity);
   } else if (mode == "upperinc") {
@@ -496,6 +592,33 @@ Status SearchTextFile(
   return Status(Status::SUCCESS);
 }
 
+Status SearchTextFileLambda(
+    File* file, std::function<bool(std::string_view)> matcher,
+    std::vector<std::string>* matched, size_t capacity) {
+  assert(file != nullptr && matched != nullptr);
+  if (capacity == 0) {
+    capacity = SIZE_MAX;
+  }
+  FileReader reader(file);
+  matched->clear();
+  while (matched->size() < capacity) {
+    std::string line;
+    Status status = reader.ReadLine(&line);
+    if (status != Status::SUCCESS) {
+      if (status != Status::NOT_FOUND_ERROR) {
+        return status;
+      }
+      break;
+    }
+    const std::string_view content(
+        line.data(), line.empty() || line.back() != '\n' ? line.size() : line.size() - 1);
+    if (matcher(content)) {
+      matched->emplace_back(std::string(content));
+    }
+  }
+  return Status(Status::SUCCESS);
+}
+
 Status SearchTextFileRegex(
     File* file, std::string_view pattern, std::vector<std::string>* matched, size_t capacity) {
   assert(file != nullptr && matched != nullptr);
@@ -504,7 +627,41 @@ Status SearchTextFileRegex(
   }
   std::unique_ptr<std::regex> regex;
   try {
-    regex = std::make_unique<std::regex>(pattern.begin(), pattern.end());
+    std::regex_constants::syntax_option_type options = std::regex_constants::optimize;
+    if (pattern.size() >= 2 && pattern[0] == '(' && pattern[1] == '?') {
+      bool ended = false;
+      size_t pos = 2;
+      while (!ended && pos < pattern.size()) {
+        switch (pattern[pos]) {
+          case 'a':
+            options |= std::regex_constants::awk;
+            break;
+          case 'b':
+            options |= std::regex_constants::basic;
+            break;
+          case 'e':
+            options |= std::regex_constants::extended;
+            break;
+          case 'i':
+            options |= std::regex_constants::icase;
+            break;
+          case 'l':
+            options |= std::regex_constants::egrep;
+            break;
+          case ')':
+            ended = true;
+            break;
+          default:
+            throw std::regex_error(std::regex_constants::error_complexity);
+        }
+        pos++;
+      }
+      if (!ended) {
+        throw std::regex_error(std::regex_constants::error_complexity);
+      }
+      pattern = pattern.substr(pos);
+    }
+    regex = std::make_unique<std::regex>(pattern.begin(), pattern.end(), options);
   } catch (const std::regex_error& err) {
     return Status(Status::INVALID_ARGUMENT_ERROR, StrCat("invalid regex: ", err.what()));
   }
@@ -604,6 +761,41 @@ Status SearchTextFileModal(
     status = SearchTextFileEditDistance(file, pattern, matched, capacity);
   } else if (mode == "editbin") {
     status = SearchTextFileEditDistanceBinary(file, pattern, matched, capacity);
+  } else if (mode == "containcase") {
+    status = SearchTextFile(file, pattern, matched, capacity, StrCaseContains);
+  } else if (mode == "containword") {
+    status = SearchTextFile(file, pattern, matched, capacity, StrWordContains);
+  } else if (mode == "containcaseword") {
+    status = SearchTextFile(file, pattern, matched, capacity, StrCaseWordContains);
+  } else if (mode == "contain*") {
+    const auto& patterns = StrSplit(pattern, '\n', true);
+    auto matcher = [=](std::string_view text) -> bool {
+      return StrContainsBatch(text, patterns);
+    };
+    status = SearchTextFileLambda(file, matcher, matched, capacity);
+  } else if (mode == "containcase*") {
+    const auto& patterns = StrSplit(pattern, '\n', true);
+    auto matcher = [=](std::string_view text) -> bool {
+      return StrCaseContainsBatch(text, patterns);
+    };
+    status = SearchTextFileLambda(file, matcher, matched, capacity);
+  } else if (mode == "containword*") {
+    const auto& patterns = StrSplit(pattern, '\n', true);
+    auto matcher = [=](std::string_view text) -> bool {
+      return StrWordContainsBatch(text, patterns);
+    };
+    status = SearchTextFileLambda(file, matcher, matched, capacity);
+  } else if (mode == "containcaseword*") {
+    const auto& patterns = StrSplit(pattern, '\n', true);
+    std::vector<std::string> lower_patterns;
+    lower_patterns.reserve(patterns.size());
+    for (const auto& pattern : patterns) {
+      lower_patterns.emplace_back(StrLowerCase(pattern));
+    }
+    auto matcher = [=](std::string_view text) -> bool {
+      return StrCaseWordContainsBatchLower(text, lower_patterns);
+    };
+    status = SearchTextFileLambda(file, matcher, matched, capacity);
   } else {
     status = Status(Status::INVALID_ARGUMENT_ERROR, "unknown mode");
   }

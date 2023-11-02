@@ -51,7 +51,7 @@ class Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  virtual char* Compress(const void* buf, size_t size, size_t* sp) = 0;
+  virtual char* Compress(const void* buf, size_t size, size_t* sp) const = 0;
 
   /**
    * Decompresses a serial data.
@@ -63,7 +63,7 @@ class Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  virtual char* Decompress(const void* buf, size_t size, size_t* sp) = 0;
+  virtual char* Decompress(const void* buf, size_t size, size_t* sp) const = 0;
 
   /**
    * Makes a new Compressor object of the same concrete class.
@@ -113,7 +113,7 @@ class DummyCompressor : public Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  char* Compress(const void* buf, size_t size, size_t* sp) override;
+  char* Compress(const void* buf, size_t size, size_t* sp) const override;
 
   /**
    * Decompresses a serial data.
@@ -125,7 +125,7 @@ class DummyCompressor : public Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  char* Decompress(const void* buf, size_t size, size_t* sp) override;
+  char* Decompress(const void* buf, size_t size, size_t* sp) const override;
 
   /**
    * Makes a new Compressor object of the same concrete class.
@@ -139,7 +139,7 @@ class DummyCompressor : public Compressor {
 };
 
 /**
- * Complessor implemeted with ZLib.
+ * Compressor implemeted with ZLib.
  */
 class ZLibCompressor final : public Compressor {
  public:
@@ -184,7 +184,7 @@ class ZLibCompressor final : public Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  char* Compress(const void* buf, size_t size, size_t* sp) override;
+  char* Compress(const void* buf, size_t size, size_t* sp) const override;
 
   /**
    * Decompresses a serial data.
@@ -196,7 +196,7 @@ class ZLibCompressor final : public Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  char* Decompress(const void* buf, size_t size, size_t* sp) override;
+  char* Decompress(const void* buf, size_t size, size_t* sp) const override;
 
   /**
    * Makes a new Compressor object of the same concrete class.
@@ -212,7 +212,7 @@ class ZLibCompressor final : public Compressor {
 };
 
 /**
- * Complessor implemeted with ZStd.
+ * Compressor implemeted with ZStd.
  */
 class ZStdCompressor final : public Compressor {
  public:
@@ -245,7 +245,7 @@ class ZStdCompressor final : public Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  char* Compress(const void* buf, size_t size, size_t* sp) override;
+  char* Compress(const void* buf, size_t size, size_t* sp) const override;
 
   /**
    * Decompresses a serial data.
@@ -257,7 +257,7 @@ class ZStdCompressor final : public Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  char* Decompress(const void* buf, size_t size, size_t* sp) override;
+  char* Decompress(const void* buf, size_t size, size_t* sp) const override;
 
   /**
    * Makes a new Compressor object of the same concrete class.
@@ -271,7 +271,7 @@ class ZStdCompressor final : public Compressor {
 };
 
 /**
- * Complessor implemeted with LZ4.
+ * Compressor implemeted with LZ4.
  */
 class LZ4Compressor final : public Compressor {
  public:
@@ -303,7 +303,7 @@ class LZ4Compressor final : public Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  char* Compress(const void* buf, size_t size, size_t* sp) override;
+  char* Compress(const void* buf, size_t size, size_t* sp) const override;
 
   /**
    * Decompresses a serial data.
@@ -315,7 +315,7 @@ class LZ4Compressor final : public Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  char* Decompress(const void* buf, size_t size, size_t* sp) override;
+  char* Decompress(const void* buf, size_t size, size_t* sp) const override;
 
   /**
    * Makes a new Compressor object of the same concrete class.
@@ -329,7 +329,7 @@ class LZ4Compressor final : public Compressor {
 };
 
 /**
- * Complessor implemeted with LZMA.
+ * Compressor implemeted with LZMA.
  */
 class LZMACompressor final : public Compressor {
  public:
@@ -374,7 +374,7 @@ class LZMACompressor final : public Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  char* Compress(const void* buf, size_t size, size_t* sp) override;
+  char* Compress(const void* buf, size_t size, size_t* sp) const override;
 
   /**
    * Decompresses a serial data.
@@ -386,7 +386,7 @@ class LZMACompressor final : public Compressor {
    * @details Because the region of the return value is allocated with the xmalloc function,
    * it should be released with the xfree function.
    */
-  char* Decompress(const void* buf, size_t size, size_t* sp) override;
+  char* Decompress(const void* buf, size_t size, size_t* sp) const override;
 
   /**
    * Makes a new Compressor object of the same concrete class.
@@ -399,6 +399,148 @@ class LZMACompressor final : public Compressor {
   int32_t level_;
   /** The metadata mode. */
   MetadataMode metadata_mode_;
+};
+
+/**
+ * Compressor implemeted with RC4 encryption.
+ */
+class RC4Compressor final : public Compressor {
+ public:
+  /**
+   * Constructor.
+   * @param key The encription key.
+   * @param rnd_seed The random seed to make initialization vectors for encoding.  If it is zero,
+   * a real random device generates the seed.
+   */
+  explicit RC4Compressor(std::string_view key, uint32_t rnd_seed = 0);
+
+  /**
+   * Destructor.
+   */
+  virtual ~RC4Compressor();
+
+  /**
+   * Checks whether the implementation is actually supported.
+   * @return True if the implementation is actually supported.
+   */
+  bool IsSupported() const override;
+
+  /**
+   * Compresses a serial data.
+   * @param buf the input buffer.
+   * @param size the size of the input buffer.
+   * @param sp the pointer to the variable into which the size of the region of the return
+   * value is assigned.
+   * @return The pointer to the result data, or nullptr on failure.
+   * @details Because the region of the return value is allocated with the xmalloc function,
+   * it should be released with the xfree function.
+   */
+  char* Compress(const void* buf, size_t size, size_t* sp) const override;
+
+  /**
+   * Decompresses a serial data.
+   * @param buf the input buffer.
+   * @param size the size of the input buffer.
+   * @param sp the pointer to the variable into which the size of the region of the return
+   * value is assigned.
+   * @return The pointer to the result data, or nullptr on failure.
+   * @details Because the region of the return value is allocated with the xmalloc function,
+   * it should be released with the xfree function.
+   */
+  char* Decompress(const void* buf, size_t size, size_t* sp) const override;
+
+  /**
+   * Makes a new Compressor object of the same concrete class.
+   * @return The new Compressor object.
+   */
+  std::unique_ptr<Compressor> MakeCompressor() const override;
+
+ private:
+  /** The encription key. */
+  std::string key_;
+  /** The random seed. */
+  uint32_t rnd_seed_;
+  /** The random generator. */
+  void* rnd_gen_;
+  /** The random distribution. */
+  void* rnd_dist_;
+  /** The mutext for random generator. */
+  void* rnd_mutex_;
+};
+
+/**
+ * Compressor implemeted with AES encryption.
+ */
+class AESCompressor final : public Compressor {
+ public:
+  /**
+   * Constructor.
+   * @param key The encription key.
+   * @param rnd_seed The random seed to make initialization vectors for encoding.  If it is zero,
+   * a real random device generates the seed.
+   */
+  explicit AESCompressor(std::string_view key, uint32_t rnd_seed = 0);
+
+  /**
+   * Destructor.
+   */
+  virtual ~AESCompressor();
+
+  /**
+   * Checks whether the implementation is actually supported.
+   * @return True if the implementation is actually supported.
+   */
+  bool IsSupported() const override;
+
+  /**
+   * Compresses a serial data.
+   * @param buf the input buffer.
+   * @param size the size of the input buffer.
+   * @param sp the pointer to the variable into which the size of the region of the return
+   * value is assigned.
+   * @return The pointer to the result data, or nullptr on failure.
+   * @details Because the region of the return value is allocated with the xmalloc function,
+   * it should be released with the xfree function.
+   */
+  char* Compress(const void* buf, size_t size, size_t* sp) const override;
+
+  /**
+   * Decompresses a serial data.
+   * @param buf the input buffer.
+   * @param size the size of the input buffer.
+   * @param sp the pointer to the variable into which the size of the region of the return
+   * value is assigned.
+   * @return The pointer to the result data, or nullptr on failure.
+   * @details Because the region of the return value is allocated with the xmalloc function,
+   * it should be released with the xfree function.
+   */
+  char* Decompress(const void* buf, size_t size, size_t* sp) const override;
+
+  /**
+   * Makes a new Compressor object of the same concrete class.
+   * @return The new Compressor object.
+   */
+  std::unique_ptr<Compressor> MakeCompressor() const override;
+
+ private:
+  /** The encription key. */
+  std::string key_;
+  /** The random seed. */
+  uint32_t rnd_seed_;
+  /** The random generator. */
+  void* rnd_gen_;
+  /** The random distribution. */
+  void* rnd_dist_;
+  /** The mutext for random generator. */
+  void* rnd_mutex_;
+  /** The round key for encoding. */
+  uint32_t* enc_rk_;
+  /** The number of rounds for encoding. */
+  uint32_t enc_rounds_;
+  /** The round key for deccoding. */
+  uint32_t* dec_rk_;
+  /** The number of rounds for decoding. */
+  uint32_t dec_rounds_;
 };
 
 }  // namespace tkrzw

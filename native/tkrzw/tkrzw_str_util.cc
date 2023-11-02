@@ -18,7 +18,7 @@
 
 namespace tkrzw {
 
-#if defined(_SYS_POSIX_) && !defined(_TKRZW_STDONLY) && !defined(_SYS_FREEBSD_)
+#if defined(_SYS_POSIX_) && !defined(_TKRZW_STDONLY)
 
 inline void* tkrzw_memmem(const void* haystack, size_t haystacklen,
                           const void* needle, size_t needlelen) {
@@ -54,6 +54,10 @@ inline void* tkrzw_memmem(const void* haystack, size_t haystacklen,
 }
 
 #endif
+
+inline bool tkrzw_isalnum(char c) {
+  return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
 
 int64_t StrToInt(std::string_view str, int64_t defval) {
   const unsigned char* rp = reinterpret_cast<const unsigned char*>(str.data());
@@ -566,7 +570,7 @@ std::string StrLowerCase(std::string_view str) {
   std::string converted;
   converted.reserve(str.size());
   for (int32_t c : str) {
-    if (c >= 'A' && c <= 'Z') {
+    if (c <= 'Z' && c >= 'A') {
       c += 'a' - 'A';
     }
     converted.push_back(c);
@@ -578,7 +582,7 @@ void StrLowerCase(std::string* str) {
   assert(str != nullptr);
   for (auto it = str->begin(); it != str->end(); ++it) {
     int32_t c = *it;
-    if (c >= 'A' && c <= 'Z') {
+    if (c <= 'Z' && c >= 'A') {
       *it = c + ('a' - 'A');
     }
   }
@@ -638,6 +642,109 @@ bool StrContains(std::string_view text, std::string_view pattern) {
   return tkrzw_memmem(text.data(), text.size(), pattern.data(), pattern.size()) != nullptr;
 }
 
+bool StrCaseContains(std::string_view text, std::string_view pattern) {
+  return StrCaseSearch(text, pattern) >= 0;
+}
+
+bool StrWordContains(std::string_view text, std::string_view pattern) {
+  return StrWordSearch(text, pattern) >= 0;
+}
+
+bool StrCaseWordContains(std::string_view text, std::string_view pattern) {
+  return StrCaseWordSearch(text, pattern) >= 0;
+}
+
+bool StrContainsBatch(std::string_view text, const std::vector<std::string>& patterns) {
+  for (const auto& pattern : patterns) {
+    if (tkrzw_memmem(text.data(), text.size(), pattern.data(), pattern.size()) != nullptr) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool StrCaseContainsBatch(std::string_view text, const std::vector<std::string>& patterns) {
+  for (const auto& pattern : patterns) {
+    if (StrCaseSearch(text, pattern) >= 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool StrWordContainsBatch(std::string_view text, const std::vector<std::string>& patterns) {
+  for (const auto& pattern : patterns) {
+    if (StrWordSearch(text, pattern) >= 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool StrCaseWordContainsBatch(std::string_view text, const std::vector<std::string>& patterns) {
+  for (const auto& pattern : patterns) {
+    if (StrCaseWordSearch(text, pattern) >= 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool StrCaseWordContainsBatchLower(
+    std::string_view text, const std::vector<std::string>& patterns) {
+  constexpr size_t STACK_BUFFER_SIZE = 512;
+  char stack_buffer[STACK_BUFFER_SIZE];
+  char* buffer = stack_buffer;
+  if (text.size() > STACK_BUFFER_SIZE) {
+    buffer = static_cast<char*>(xmalloc(text.size()));
+  }
+  char* wp = buffer;
+  const char* rp = text.data();
+  const char* ep = rp + text.size();
+  while (rp < ep) {
+    const char c = *(rp++);
+    if (c <= 'Z' && c >= 'A') {
+      *(wp++) = c + 'a' - 'A';
+    } else {
+      *(wp++) = c;
+    }
+  }
+  for (const auto& pattern : patterns) {
+    if (pattern.size() == 0) {
+      if (buffer != stack_buffer) {
+        xfree(buffer);
+      }
+      return true;
+    }
+    rp = buffer;
+    size_t size = text.size();
+    while (size > 0) {
+      const char* pv =
+          (const char*)tkrzw_memmem((void*)rp, size, pattern.data(), pattern.size());
+      if (!pv) break;
+      if (pv != buffer && tkrzw_isalnum(*(pv - 1)) && tkrzw_isalnum(*pv)) {
+        rp = pv + 1;
+        size = text.size() - (rp - buffer);
+        continue;
+      }
+      if (pv + pattern.size() != rp + size &&
+          tkrzw_isalnum(*(pv + pattern.size())) && tkrzw_isalnum(*(pv + pattern.size() - 1))) {
+        rp = pv + 1;
+        size = text.size() - (rp - buffer);
+        continue;
+      }
+      if (buffer != stack_buffer) {
+        xfree(buffer);
+      }
+      return true;
+    }
+  }
+  if (buffer != stack_buffer) {
+    xfree(buffer);
+  }
+  return false;
+}
+
 bool StrBeginsWith(std::string_view text, std::string_view pattern) {
   if (pattern.size() > text.size()) {
     return false;
@@ -657,11 +764,11 @@ int32_t StrCaseCompare(std::string_view a, std::string_view b) {
   const int32_t length = std::min(a.size(), b.size());
   for (int32_t i = 0; i < length; i++) {
     int32_t ac = static_cast<unsigned char>(a[i]);
-    if (ac >= 'A' && ac <= 'Z') {
+    if (ac <= 'Z' && ac >= 'A') {
       ac += 'a' - 'A';
     }
     int32_t bc = static_cast<unsigned char>(b[i]);
-    if (bc >= 'A' && bc <= 'Z') {
+    if (bc <= 'Z' && bc >= 'A') {
       bc += 'a' - 'A';
     }
     if (ac != bc) {
@@ -1134,6 +1241,131 @@ std::vector<std::vector<int32_t>> StrSearchBatchRK(
   return result;
 }
 
+int32_t StrCaseSearch(std::string_view text, std::string_view pattern) {
+  if (pattern.size() > text.size()) {
+    return -1;
+  }
+  if (pattern.empty()) {
+    return 0;
+  }
+  constexpr size_t STACK_BUFFER_SIZE = 512;
+  char stack_buffer[STACK_BUFFER_SIZE];
+  char* buffer = stack_buffer;
+  if (pattern.size() > STACK_BUFFER_SIZE) {
+    buffer = static_cast<char*>(xmalloc(pattern.size()));
+  }
+  for (size_t pi = 0; pi < pattern.size(); pi++) {
+    char pc = pattern[pi];
+    if (pc <= 'Z' && pc >= 'A') {
+      pc += 'a' - 'A';
+    }
+    buffer[pi] = pc;
+  }
+  int32_t rv = -1;
+  size_t end = text.size() - pattern.size() + 1;
+  for (size_t ti = 0; ti < end; ti++) {
+    size_t pi = 0;
+    for (; pi < pattern.size(); pi++) {
+      char tc = text[ti + pi];
+      if (tc <= 'Z' && tc >= 'A') {
+        tc += 'a' - 'A';
+      }
+      if (tc != buffer[pi]) {
+        break;
+      }
+    }
+    if (pi == pattern.size()) {
+      rv = ti;
+      break;
+    }
+  }
+  if (buffer != stack_buffer) {
+    xfree(buffer);
+  }
+  return rv;
+}
+
+int32_t StrWordSearch(std::string_view text, std::string_view pattern) {
+  if (pattern.size() > text.size()) {
+    return -1;
+  }
+  if (pattern.empty()) {
+    return 0;
+  }
+  const char* rp = text.data();
+  size_t size = text.size();
+  while (size > 0) {
+    const char* pv =
+        (const char*)tkrzw_memmem((void*)rp, size, pattern.data(), pattern.size());
+    if (!pv) break;
+    if (pv != text.data() && tkrzw_isalnum(*(pv - 1)) && tkrzw_isalnum(*pv)) {
+      rp = pv + 1;
+      size = text.size() - (rp - text.data());
+      continue;
+    }
+    if (pv + pattern.size() != rp + size &&
+        tkrzw_isalnum(*(pv + pattern.size())) && tkrzw_isalnum(*(pv + pattern.size() - 1))) {
+      rp = pv + 1;
+      size = text.size() - (rp - text.data());
+      continue;
+    }
+
+    return pv - text.data();
+  }
+  return -1;
+}
+
+int32_t StrCaseWordSearch(std::string_view text, std::string_view pattern) {
+  if (pattern.size() > text.size()) {
+    return -1;
+  }
+  if (pattern.empty()) {
+    return 0;
+  }
+  constexpr size_t STACK_BUFFER_SIZE = 512;
+  char stack_buffer[STACK_BUFFER_SIZE];
+  char* buffer = stack_buffer;
+  if (pattern.size() > STACK_BUFFER_SIZE) {
+    buffer = static_cast<char*>(xmalloc(pattern.size()));
+  }
+  for (size_t pi = 0; pi < pattern.size(); pi++) {
+    char pc = pattern[pi];
+    if (pc <= 'Z' && pc >= 'A') {
+      pc += 'a' - 'A';
+    }
+    buffer[pi] = pc;
+  }
+  int32_t rv = -1;
+  size_t end = text.size() - pattern.size() + 1;
+  for (size_t ti = 0; ti < end; ti++) {
+    size_t pi = 0;
+    for (; pi < pattern.size(); pi++) {
+      char tc = text[ti + pi];
+      if (tc <= 'Z' && tc >= 'A') {
+        tc += 'a' - 'A';
+      }
+      if (tc != buffer[pi]) {
+        break;
+      }
+    }
+    if (pi == pattern.size()) {
+      if (ti != 0 && tkrzw_isalnum(text[ti - 1]) && tkrzw_isalnum(text[ti])) {
+        continue;
+      }
+      if (ti != end - 1 && tkrzw_isalnum(text[ti + pattern.size()]) &&
+          tkrzw_isalnum(text[ti + pattern.size() - 1])) {
+        continue;
+      }
+      rv = ti;
+      break;
+    }
+  }
+  if (buffer != stack_buffer) {
+    xfree(buffer);
+  }
+  return rv;
+}
+
 std::string StrStripSpace(std::string_view str) {
   std::string converted;
   converted.reserve(str.size());
@@ -1485,30 +1717,101 @@ std::string StrDecodeURL(std::string_view str) {
   return decoded;
 }
 
+int32_t StrSearchRegex(std::string_view text, std::string_view pattern) {
+  int32_t pos = -1;
+  try {
+    std::regex_constants::syntax_option_type options
+        = static_cast<std::regex_constants::syntax_option_type>(0);
+    if (pattern.size() >= 2 && pattern[0] == '(' && pattern[1] == '?') {
+      bool ended = false;
+      size_t pos = 2;
+      while (!ended && pos < pattern.size()) {
+        switch (pattern[pos]) {
+          case 'a':
+            options |= std::regex_constants::awk;
+            break;
+          case 'b':
+            options |= std::regex_constants::basic;
+            break;
+          case 'e':
+            options |= std::regex_constants::extended;
+            break;
+          case 'i':
+            options |= std::regex_constants::icase;
+            break;
+          case 'l':
+            options |= std::regex_constants::egrep;
+            break;
+          case ')':
+            ended = true;
+            break;
+          default:
+            throw std::regex_error(std::regex_constants::error_complexity);
+        }
+        pos++;
+      }
+      if (!ended) {
+        throw std::regex_error(std::regex_constants::error_complexity);
+      }
+      pattern = pattern.substr(pos);
+    }
+    std::regex regex(pattern.begin(), pattern.end(), options);
+    std::match_results<std::string_view::const_iterator> matched;
+    if (std::regex_search(text.begin(), text.end(), matched, regex)) {
+      return matched.position(0);
+    }
+  } catch (const std::regex_error&) {
+    return -2;
+  }
+  return pos;
+}
+
 std::string StrReplaceRegex(std::string_view text, std::string_view pattern,
                             std::string_view replace) {
   std::string result;
   try {
-    std::regex regex(pattern.begin(), pattern.end());
+    std::regex_constants::syntax_option_type options
+        = static_cast<std::regex_constants::syntax_option_type>(0);
+    if (pattern.size() >= 2 && pattern[0] == '(' && pattern[1] == '?') {
+      bool ended = false;
+      size_t pos = 2;
+      while (!ended && pos < pattern.size()) {
+        switch (pattern[pos]) {
+          case 'a':
+            options |= std::regex_constants::awk;
+            break;
+          case 'b':
+            options |= std::regex_constants::basic;
+            break;
+          case 'e':
+            options |= std::regex_constants::extended;
+            break;
+          case 'i':
+            options |= std::regex_constants::icase;
+            break;
+          case 'l':
+            options |= std::regex_constants::egrep;
+            break;
+          case ')':
+            ended = true;
+            break;
+          default:
+            throw std::regex_error(std::regex_constants::error_complexity);
+        }
+        pos++;
+      }
+      if (!ended) {
+        throw std::regex_error(std::regex_constants::error_complexity);
+      }
+      pattern = pattern.substr(pos);
+    }
+    std::regex regex(pattern.begin(), pattern.end(), options);
     std::regex_replace(std::back_inserter(result), text.begin(), text.end(), regex,
                        std::string(replace));
   } catch (const std::regex_error&) {
     result = "";
   }
   return result;
-}
-
-std::string SerializeStrPair(std::string_view first, std::string_view second) {
-  const size_t size = SizeVarNum(first.size()) + first.size() +
-      SizeVarNum(second.size()) + second.size();
-  std::string serialized(size, 0);
-  char* wp = const_cast<char*>(serialized.data());
-  wp += WriteVarNum(wp, first.size());
-  std::memcpy(wp, first.data(), first.size());
-  wp += first.size();
-  wp += WriteVarNum(wp, second.size());
-  std::memcpy(wp, second.data(), second.size());
-  return serialized;
 }
 
 std::vector<uint32_t> ConvertUTF8ToUCS4(std::string_view utf) {
@@ -1687,18 +1990,17 @@ std::string ConvertWideToUTF8(const std::wstring& wstr) {
   return utf;
 }
 
-int32_t StrSearchRegex(std::string_view text, std::string_view pattern) {
-  int32_t pos = -1;
-  try {
-    std::regex regex(pattern.begin(), pattern.end());
-    std::match_results<std::string_view::const_iterator> matched;
-    if (std::regex_search(text.begin(), text.end(), matched, regex)) {
-      return matched.position(0);
-    }
-  } catch (const std::regex_error&) {
-    return -2;
-  }
-  return pos;
+std::string SerializeStrPair(std::string_view first, std::string_view second) {
+  const size_t size = SizeVarNum(first.size()) + first.size() +
+      SizeVarNum(second.size()) + second.size();
+  std::string serialized(size, 0);
+  char* wp = const_cast<char*>(serialized.data());
+  wp += WriteVarNum(wp, first.size());
+  std::memcpy(wp, first.data(), first.size());
+  wp += first.size();
+  wp += WriteVarNum(wp, second.size());
+  std::memcpy(wp, second.data(), second.size());
+  return serialized;
 }
 
 void DeserializeStrPair(

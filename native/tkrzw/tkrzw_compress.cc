@@ -16,6 +16,8 @@
 #include "tkrzw_compress.h"
 #include "tkrzw_hash_util.h"
 #include "tkrzw_lib_common.h"
+#include "tkrzw_sys_compress_aes.h"
+#include "tkrzw_thread_util.h"
 
 #if _TKRZW_COMP_ZLIB
 extern "C" {
@@ -51,7 +53,7 @@ bool DummyCompressor::IsSupported() const {
   return true;
 }
 
-char* DummyCompressor::Compress(const void* buf, size_t size, size_t* sp) {
+char* DummyCompressor::Compress(const void* buf, size_t size, size_t* sp) const {
   if (checksum_) {
     const uint32_t crc = HashCRC32(buf, size);
     char* zbuf = static_cast<char*>(xmalloc(sizeof(uint32_t) + size));
@@ -66,7 +68,7 @@ char* DummyCompressor::Compress(const void* buf, size_t size, size_t* sp) {
   return zbuf;
 }
 
-char* DummyCompressor::Decompress(const void* buf, size_t size, size_t* sp) {
+char* DummyCompressor::Decompress(const void* buf, size_t size, size_t* sp) const {
   if (checksum_) {
     if (size < sizeof(uint32_t)) {
       return nullptr;
@@ -108,7 +110,7 @@ bool ZLibCompressor::IsSupported() const {
 #endif
 }
 
-char* ZLibCompressor::Compress(const void* buf, size_t size, size_t* sp) {
+char* ZLibCompressor::Compress(const void* buf, size_t size, size_t* sp) const {
 #if _TKRZW_COMP_ZLIB
   assert(buf != nullptr && size <= MAX_MEMORY_SIZE && sp != nullptr);
   z_stream zs;
@@ -154,7 +156,7 @@ char* ZLibCompressor::Compress(const void* buf, size_t size, size_t* sp) {
 #endif
 }
 
-char* ZLibCompressor::Decompress(const void* buf, size_t size, size_t* sp) {
+char* ZLibCompressor::Decompress(const void* buf, size_t size, size_t* sp) const {
 #if _TKRZW_COMP_ZLIB
   assert(buf != nullptr && size <= MAX_MEMORY_SIZE && sp != nullptr);
   size_t zsiz = size * 8 + 32;
@@ -230,7 +232,7 @@ bool ZStdCompressor::IsSupported() const {
 #endif
 }
 
-char* ZStdCompressor::Compress(const void* buf, size_t size, size_t* sp) {
+char* ZStdCompressor::Compress(const void* buf, size_t size, size_t* sp) const {
 #if _TKRZW_COMP_ZSTD
   int32_t zsiz = ZSTD_compressBound(size);
   char* zbuf = static_cast<char*>(xmalloc(zsiz));
@@ -246,7 +248,7 @@ char* ZStdCompressor::Compress(const void* buf, size_t size, size_t* sp) {
 #endif
 }
 
-char* ZStdCompressor::Decompress(const void* buf, size_t size, size_t* sp) {
+char* ZStdCompressor::Decompress(const void* buf, size_t size, size_t* sp) const {
 #if _TKRZW_COMP_ZSTD
   int32_t zsiz = size * 8 + 32;
   char* zbuf = static_cast<char*>(xmalloc(zsiz));
@@ -288,7 +290,7 @@ bool LZ4Compressor::IsSupported() const {
 #endif
 }
 
-char* LZ4Compressor::Compress(const void* buf, size_t size, size_t* sp) {
+char* LZ4Compressor::Compress(const void* buf, size_t size, size_t* sp) const {
 #if _TKRZW_COMP_LZ4
   int32_t zsiz = LZ4_compressBound(size);
   char* zbuf = static_cast<char*>(xmalloc(zsiz));
@@ -305,7 +307,7 @@ char* LZ4Compressor::Compress(const void* buf, size_t size, size_t* sp) {
 #endif
 }
 
-char* LZ4Compressor::Decompress(const void* buf, size_t size, size_t* sp) {
+char* LZ4Compressor::Decompress(const void* buf, size_t size, size_t* sp) const {
 #if _TKRZW_COMP_LZ4
   int32_t zsiz = size * 4 + 32;
   char* zbuf = static_cast<char*>(xmalloc(zsiz));
@@ -347,7 +349,7 @@ bool LZMACompressor::IsSupported() const {
 #endif
 }
 
-char* LZMACompressor::Compress(const void* buf, size_t size, size_t* sp) {
+char* LZMACompressor::Compress(const void* buf, size_t size, size_t* sp) const {
 #if _TKRZW_COMP_LZMA
   assert(buf != nullptr && size <= MAX_MEMORY_SIZE && sp != nullptr);
   lzma_stream zs = LZMA_STREAM_INIT;
@@ -396,7 +398,7 @@ char* LZMACompressor::Compress(const void* buf, size_t size, size_t* sp) {
 #endif
 }
 
-char* LZMACompressor::Decompress(const void* buf, size_t size, size_t* sp) {
+char* LZMACompressor::Decompress(const void* buf, size_t size, size_t* sp) const {
 #if _TKRZW_COMP_LZMA
   assert(buf != nullptr && size <= MAX_MEMORY_SIZE && sp != nullptr);
   size_t zsiz = size * 12 + 32;
@@ -438,6 +440,246 @@ char* LZMACompressor::Decompress(const void* buf, size_t size, size_t* sp) {
 
 std::unique_ptr<Compressor> LZMACompressor::MakeCompressor() const {
   return std::make_unique<LZMACompressor>(level_, metadata_mode_);
+}
+
+RC4Compressor::RC4Compressor(std::string_view key, uint32_t rnd_seed) {
+  if (key.empty()) {
+    key = std::string_view("\0", 1);
+  }
+  key_ = key;
+  rnd_seed_ = rnd_seed;
+  if (rnd_seed == 0) {
+    rnd_seed = std::random_device()();
+  }
+  rnd_gen_ = new std::mt19937(rnd_seed);
+  rnd_dist_ = new std::uniform_int_distribution<uint64_t>;
+  rnd_mutex_ = new SpinMutex;
+}
+
+RC4Compressor::~RC4Compressor() {
+  delete (SpinMutex*)rnd_mutex_;
+  delete (std::uniform_int_distribution<uint64_t>*)rnd_dist_;
+  delete (std::mt19937*)rnd_gen_;
+}
+
+bool RC4Compressor::IsSupported() const {
+  return true;
+}
+
+char* RC4Compressor::Compress(const void* buf, size_t size, size_t* sp) const {
+  assert(buf != nullptr && size <= MAX_MEMORY_SIZE && sp != nullptr);
+  ((SpinMutex*)rnd_mutex_)->lock();
+  uint64_t iv = (*((std::uniform_int_distribution<uint64_t>*)rnd_dist_))(
+      *(std::mt19937*)rnd_gen_);
+  ((SpinMutex*)rnd_mutex_)->unlock();
+  constexpr size_t ivsize = 6;
+  char* res_buf = (char*)xmalloc(size + ivsize);
+  char* wp = res_buf;
+  WriteFixNum(wp, iv, ivsize);
+  const char* ivp = wp;
+  wp += ivsize;
+  const size_t vkey_size = key_.size() + ivsize;
+  uint32_t sbox[0x100], kbox[0x100];
+  for (int32_t i = 0; i < 0x100; i++) {
+    sbox[i] = i;
+    const int32_t vidx = i % vkey_size;
+    if (vidx < key_.size()) {
+      kbox[i] = ((uint8_t*)key_.data())[vidx];
+    } else {
+      kbox[i] = *(ivp + vidx - key_.size());
+    }
+  }
+  uint32_t sidx = 0;
+  for (int32_t i = 0; i < 0x100; i++) {
+    sidx = (sidx + sbox[i] + kbox[i]) & 0xff;
+    const uint32_t swap = sbox[i];
+    sbox[i] = sbox[sidx];
+    sbox[sidx] = swap;
+  }
+  const char* rp = (const char*)buf;
+  const char* ep = rp + size;
+  uint32_t x = 0;
+  uint32_t y = 0;
+  while (rp < ep) {
+    x = (x + 1) & 0xff;
+    y = (y + sbox[x]) & 0xff;
+    const uint32_t swap = sbox[x];
+    sbox[x] = sbox[y];
+    sbox[y] = swap;
+    *(wp++) = *(rp++) ^ sbox[(sbox[x] + sbox[y]) & 0xff];
+  }
+  *sp = wp - res_buf;
+  return res_buf;
+}
+
+char* RC4Compressor::Decompress(const void* buf, size_t size, size_t* sp) const {
+  assert(buf != nullptr && size <= MAX_MEMORY_SIZE && sp != nullptr);
+  constexpr size_t ivsize = 6;
+  if (size < ivsize) {
+    return nullptr;
+  }
+  const char* rp = (const char*)buf;
+  const char* ivp = rp;
+  rp += ivsize;
+  size -= ivsize;
+  const size_t vkey_size = key_.size() + ivsize;
+  uint32_t sbox[0x100], kbox[0x100];
+  for (int32_t i = 0; i < 0x100; i++) {
+    sbox[i] = i;
+    const int32_t vidx = i % vkey_size;
+    if (vidx < key_.size()) {
+      kbox[i] = ((uint8_t*)key_.data())[vidx];
+    } else {
+      kbox[i] = *(ivp + vidx - key_.size());
+    }
+  }
+  uint32_t sidx = 0;
+  for (int32_t i = 0; i < 0x100; i++) {
+    sidx = (sidx + sbox[i] + kbox[i]) & 0xff;
+    const uint32_t swap = sbox[i];
+    sbox[i] = sbox[sidx];
+    sbox[sidx] = swap;
+  }
+  char* res_buf = (char*)xmalloc(size + 1);
+  char* wp = res_buf;
+  const char* ep = rp + size;
+  uint32_t x = 0;
+  uint32_t y = 0;
+  while (rp < ep) {
+    x = (x + 1) & 0xff;
+    y = (y + sbox[x]) & 0xff;
+    const uint32_t swap = sbox[x];
+    sbox[x] = sbox[y];
+    sbox[y] = swap;
+    *(wp++) = *(rp++) ^ sbox[(sbox[x] + sbox[y]) & 0xff];
+  }
+  *sp = wp - res_buf;
+  return res_buf;
+}
+
+std::unique_ptr<Compressor> RC4Compressor::MakeCompressor() const {
+  return std::make_unique<RC4Compressor>(key_, rnd_seed_);
+}
+
+AESCompressor::AESCompressor(std::string_view key, uint32_t rnd_seed) {
+  key_ = key;
+  char bin_key[32];
+  size_t key_size = 0;
+  std::memset(bin_key, 0, 32);
+  if (key.size() <= 32) {
+    std::memset(bin_key, 0, 32);
+    std::memcpy(bin_key, key.data(), key.size());
+    const size_t rem_size = key.size() % 16;
+    if (rem_size > 0) {
+      key_size = key.size() + 16 - rem_size;
+    }
+    if (key_size < 16) {
+      key_size = 16;
+    }
+  } else {
+    for (size_t i = 0; i < key.size(); i++) {
+      bin_key[i % 32] ^= *(unsigned char*)(key.data() + i);
+    }
+    key_size = 32;
+  }
+  rnd_seed_ = rnd_seed;
+  if (rnd_seed == 0) {
+    rnd_seed = std::random_device()();
+  }
+  rnd_gen_ = new std::mt19937(rnd_seed);
+  rnd_dist_ = new std::uniform_int_distribution<uint64_t>;
+  rnd_mutex_ = new SpinMutex;
+  enc_rk_ = new uint32_t[64];
+  dec_rk_ = new uint32_t[64];
+  enc_rounds_ = AESKeySetupEnc(enc_rk_, (uint8_t*)bin_key, key_size * 8);
+  dec_rounds_ = AESKeySetupDec(dec_rk_, (uint8_t*)bin_key, key_size * 8);
+}
+
+AESCompressor::~AESCompressor() {
+  delete[] dec_rk_;
+  delete[] enc_rk_;
+  delete (SpinMutex*)rnd_mutex_;
+  delete (std::uniform_int_distribution<uint64_t>*)rnd_dist_;
+  delete (std::mt19937*)rnd_gen_;
+}
+
+bool AESCompressor::IsSupported() const {
+  return true;
+}
+
+char* AESCompressor::Compress(const void* buf, size_t size, size_t* sp) const {
+  assert(buf != nullptr && size <= MAX_MEMORY_SIZE && sp != nullptr);
+  ((SpinMutex*)rnd_mutex_)->lock();
+  uint64_t iv1 = (*((std::uniform_int_distribution<uint64_t>*)rnd_dist_))(
+      *(std::mt19937*)rnd_gen_);
+  uint64_t iv2 = (*((std::uniform_int_distribution<uint64_t>*)rnd_dist_))(
+      *(std::mt19937*)rnd_gen_);
+  ((SpinMutex*)rnd_mutex_)->unlock();
+  char* res_buf = (char*)xmalloc(size + 32);
+  char* wp = res_buf;
+  const char* rp = (const char*)buf;
+  char ivbuf[16];
+  WriteFixNum(ivbuf, iv1, 8);
+  WriteFixNum(ivbuf + 8, iv2, 8);
+  AESEncrypt(enc_rk_, enc_rounds_, (const uint8_t*)ivbuf, (uint8_t*)wp);
+  wp += 16;
+  char xbuf[16];
+  int32_t round = 0;
+  while (size >= 16) {
+    const char* pp = round > 0 ? rp - 16 : ivbuf;
+    AESBlockXOR(rp, pp, xbuf);
+    AESEncrypt(enc_rk_, enc_rounds_, (const uint8_t*)xbuf, (uint8_t*)wp);
+    wp += 16;
+    rp += 16;
+    size -= 16;
+    round++;
+  }
+  std::memset(xbuf, size, 16);
+  const char* pp = round > 0 ? rp - 16 : ivbuf;
+  AESBlockXORSized(rp, pp, xbuf, size);
+  AESEncrypt(enc_rk_, enc_rounds_, (const uint8_t*)xbuf, (uint8_t*)wp);
+  wp += 16;
+  *sp = wp - res_buf;
+  return res_buf;
+}
+
+char* AESCompressor::Decompress(const void* buf, size_t size, size_t* sp) const {
+  assert(buf != nullptr && size <= MAX_MEMORY_SIZE && sp != nullptr);
+  if (size < 32 || size % 16 != 0) {
+    return nullptr;
+  }
+  const char* rp = (const char*)buf;
+  char ivbuf[16];
+  AESDecrypt(dec_rk_, dec_rounds_, (const uint8_t*)rp, (uint8_t*)ivbuf);
+  rp += 16;
+  size -= 16;
+  char* res_buf = (char*)xmalloc(size + 1);
+  char* wp = res_buf;
+  int32_t round = 0;
+  size_t rem_size = 0;
+  while (size >= 16) {
+    char xbuf[16];
+    AESDecrypt(dec_rk_, dec_rounds_, (const uint8_t*)rp, (uint8_t*)xbuf);
+    rem_size = xbuf[15];
+    const char* pp = round > 0 ? wp - 16 : ivbuf;
+    AESBlockXOR(xbuf, pp, wp);
+    wp += 16;
+    rp += 16;
+    size -= 16;
+    rem_size = wp[-1] ^ pp[15];
+    round++;
+  }
+  if (rem_size > 16) {
+    xfree(res_buf);
+    return nullptr;
+  }
+  wp -= 16 - rem_size;
+  *sp = wp - res_buf;
+  return res_buf;
+}
+
+std::unique_ptr<Compressor> AESCompressor::MakeCompressor() const {
+  return std::make_unique<AESCompressor>(key_, rnd_seed_);
 }
 
 }  // namespace tkrzw
