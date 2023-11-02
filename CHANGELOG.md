@@ -1,3 +1,11 @@
+# Tkrzw for Java
+
+## 0.0.8 - 2023-11-01
+
+ - Based on Tkrzw 1.0.27 and Tkrzw-Java 0.1.30
+ - Bump JNE v4.0.4
+ - Improved cross compiling and testing build system
+
 ## 0.0.7 - 2023-01-16
  - Based on Tkrzw 1.0.24 and Tkrzw-Java 0.1.28
  - Bump JNE v3.2.1 (support for linux-armel)

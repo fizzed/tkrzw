@@ -106,16 +106,27 @@ Zip libraries must be installed for this version to run. You must also install l
 ## Development
 
 We use a simple, yet quite sophisticated build system for fast, local builds across operating system and architectures.
+To build and test locally, you can leverage our [Blaze](https://github.com/fizzed/blaze) build system
 
+     java -jar blaze.jar build_natives
+     java -jar blaze.jar test
+
+For cross compiling and testing, we leverage [Buildx](https://github.com/fizzed/buildx) as a plugin to our Blaze script.
 For linux targets, we leverage docker containers either running locally on an x86_64 host, or remotely on dedicated
-build machines running on arm64, macos x64, and macos arm64.
+build machines running on arm64, macos x64, and macos arm64.  To build containers, you'll want to edit .blaze/blaze.java
+and comment out/edit which platforms you'd like to build for, or potentially change them running on a remote machine
+via SSH.  Once you're happy with what you want to build for:
 
-To build containers, you'll want to edit setup/blaze.java and comment out/edit which platforms you'd like to build for,
-or potentially change them running on a remote machine via SSH.  Once you're happy with what you want to build for:
+    java -jar blaze.jar cross_build_containers
 
-     java -jar setup/blaze.jar setup/blaze.java build_containers
-     java -jar setup/blaze.jar setup/blaze.java build_native_libs
-     java -jar setup/blaze.jar setup/blaze.java tests
+Or
+
+    java -jar blaze.jar cross_build_containers --targets linux-x64
+
+Then
+
+    java -jar blaze.jar cross_build_natives --targets linux-x64
+    java -jar blaze.jar cross_tests --targets linux-x64
 
 For information on registering your x86_64 host to run other architectures (e.g. riscv64 or aarch64), please see
 the readme for https://github.com/fizzed/buildx
