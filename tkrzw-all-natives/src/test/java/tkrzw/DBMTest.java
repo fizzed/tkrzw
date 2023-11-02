@@ -48,4 +48,9 @@ public class DBMTest {
         assertThat(dbm2.get("hello".getBytes()), is("world".getBytes()));
     }
 
+    @Test
+    public void version() {
+        assertThat(Utility.VERSION, is("1.0.27"));
+    }
+
 }
