@@ -1,10 +1,10 @@
+import com.fizzed.blaze.Config;
 import com.fizzed.blaze.Contexts;
 import com.fizzed.blaze.Task;
 import com.fizzed.buildx.Buildx;
 import com.fizzed.buildx.ContainerBuilder;
 import com.fizzed.buildx.Target;
-import com.fizzed.jne.NativeTarget;
-import com.fizzed.jne.OperatingSystem;
+import com.fizzed.jne.*;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
@@ -15,10 +15,12 @@ import static com.fizzed.blaze.Contexts.withBaseDir;
 import static com.fizzed.blaze.Systems.*;
 import static com.fizzed.blaze.util.Globber.globber;
 import static java.util.Arrays.asList;
+import static java.util.Optional.ofNullable;
 
 public class blaze {
 
     private final Logger log = Contexts.logger();
+    private final Config config = Contexts.config();
     private final Path projectDir = withBaseDir("../").toAbsolutePath();
     private final NativeTarget localNativeTarget = NativeTarget.detect();
     private final Path nativeDir = projectDir.resolve("native");
@@ -57,8 +59,27 @@ public class blaze {
 
     @Task(order = 2)
     public void test() throws Exception {
+        final Integer jdkVersion = this.config.value("jdk.version", Integer.class).orNull();
+        final HardwareArchitecture jdkArch = ofNullable(this.config.value("jdk.arch").orNull())
+            .map(HardwareArchitecture::resolve)
+            .orElse(null);
+
+        final long start = System.currentTimeMillis();
+        final JavaHome jdkHome = new JavaHomeFinder()
+            .jdk()
+            .version(jdkVersion)
+            .hardwareArchitecture(jdkArch)
+            .preferredDistributions()
+            .sorted(jdkVersion != null || jdkArch != null)  // sort if any criteria provided
+            .find();
+
+        log.info("");
+        log.info("Detected {} (in {} ms)", jdkHome, (System.currentTimeMillis()-start));
+        log.info("");
+
         exec("mvn", "clean", "test")
             .workingDir(this.projectDir)
+            .env("JAVA_HOME", jdkHome.getDirectory().toString())
             .verbose()
             .run();
     }
