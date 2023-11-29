@@ -20,6 +20,8 @@ Java distribution of Tkrzw & JNI libs by Fizzed
 [![Windows x64](https://img.shields.io/github/actions/workflow/status/fizzed/tkrzw/windows-x64.yaml?branch=master&label=Windows%20x64&style=flat-square)](https://github.com/fizzed/tkrzw/actions/workflows/windows-x64.yaml)
 ![Windows arm64](https://img.shields.io/badge/Windows%20arm64-available-blue)
 
+## Overview
+
 This is a published version of the [Tkrzw library](https://dbmx.net/tkrzw/) for Java 8+, along with native libs that are
 automatically extracted at runtime.
 
@@ -29,6 +31,22 @@ times.
 
 Linux x64 native libs are compiled on Ubuntu 18.04, so you can be assured they'll work well on various flavors of linux
 going back several years in time.
+
+## Sponsorship & Support
+
+![](https://cdn.fizzed.com/github/fizzed-logo-100.png)
+
+Project by [Fizzed, Inc.](http://fizzed.com) (Follow on Twitter: [@fizzed_inc](http://twitter.com/fizzed_inc))
+
+**Developing and maintaining opensource projects requires significant time.** If you find this project useful or need
+commercial support, we'd love to chat. Drop us an email at [ping@fizzed.com](mailto:ping@fizzed.com)
+
+Project sponsors may include the following benefits:
+
+- Priority support (outside of Github)
+- Feature development & roadmap
+- Priority bug fixes
+- Privately hosted continuous integration tests for their unique edge or use cases
 
 ## Usage
 
@@ -131,3 +149,9 @@ Then
 
 For information on registering your x86_64 host to run other architectures (e.g. riscv64 or aarch64), please see
 the readme for https://github.com/fizzed/buildx
+
+## License
+
+Copyright (C) 2020+ Fizzed, Inc.
+
+This work is licensed under the Apache License, Version 2.0. See LICENSE for details.
