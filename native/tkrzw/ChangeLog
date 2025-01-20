@@ -1,3 +1,56 @@
+2024-10-22 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.32
+	- Library version: 1.75.0
+
+	- Add NullableStringView.
+	- Fix bugs of crash by assertion to avoid std::string_view(nullptr, x).
+	- Fix a memory bug in tkrzw_dbm_perf.
+
+2024-06-02 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.31
+	- Library version: 1.74.0
+
+	- Add IntToStrDelta and StrToIntDelta.
+
+2024-05-30 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.30
+	- Library version: 1.73.0
+
+	- Add FloatBigEndianKeyComparator.
+	- Add StrToFloatBigEndian and FloatToStrBigEndian.
+
+	- Compatibility of the language interfaces
+	- tkrzw-java: 0.1.31
+	- tkrzw-python: 0.1.31
+	- tkrzw-ruby: 0.1.31
+	- tkrzw-go: 0.1.31
+
+2024-04-25 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.29
+	- Library version: 1.72.0
+
+	- Fix a bug of The C interface of PolyIndex.
+
+2024-04-16 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- Release: 1.0.28
+	- Library version: 1.71.0
+
+	- PolyIndex is added.
+	- The C interface supports PolyIndex.
+	- Fix an assertion bug of HashRecord.
+
+2023-04-18 Mikio Hirabayashi  <hirarin@gmail.com>
+
+	- StrJoin takes a bare std::string view.
+	- Fix a bug of GetLocalTimeDifference.
+	- Fix compilation warnings.
+	- Fix test failures on Mac OS.
+
 2023-03-09 Mikio Hirabayashi  <hirarin@gmail.com>
 
 	- Release: 1.0.27

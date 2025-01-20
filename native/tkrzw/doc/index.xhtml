@@ -19,8 +19,7 @@ p { text-indent: 2ex; }
 pre { margin-left: 1.5ex; padding: 0.4ex 0.6ex; border: solid 1px #dddddd; border-radius: 0.5ex;
   white-space: pre-wrap; word-wrap: break-word; line-height: 1.2; text-indent: 0; font-size: 10pt; }
 code { font-weight: bold; }
-pre[class*="language-"] { font-size: 10pt; line-height: 120%; padding: 0.5ex 0.8ex; background: #f8f8f8;
-  max-height: 70ex; }
+pre[class*="language-"] { font-size: 10pt; line-height: 120%; padding: 0.5ex 0.8ex; background: #f8f8f8; }
 li { margin-left: 0.2ex; }
 dt { margin-left: 2.0ex; }
 dd { margin-left: 5.0ex; }
@@ -91,6 +90,7 @@ function modify_title() {
       "Teramachi Kyogoku Rokkaku Zezeura Wakamiya",
       "Tonikaku Kawaii Randoseru Zettai Wasurenai",
       "Triple Kernels Reading Zero Width",
+      "Troubling Kids Ragging Zealous Workers",
       "Tibetan Kind Rangers Zipping Waffles",
       "Tetsuya Komuro Raving Zone Walker",
     ];
@@ -177,6 +177,8 @@ window.onload = function(){
 <p>Each data class has different approaches for durability.  The file database classes support the auto restore feature to recover records after the process crashes.  The file hash/tree databases support the appending update mode, which prevents data corruption of existing records.  The file skip database and all on-memory databases atomically replace the entire database with a completed temporary file, which realizes the strongest durability on a single machine.  All database classes support producing online update logs, which enables online data replication and staged backup.</p>
 
 <p>If the data structure is more complex than key-value pairs, you can treat the value as a serialized text/binary of any data structure.  You can use any serialization format.  To look up records by some properties except for the primary key, you can use secondary indices.  MemIndex and FileIndex classes are useful for the purpose.</p>
+
+<p>HashDBM and TreeDBM supoort automatic data compression and encryption with various algorithms.  If you enable one of them, the record data is stored after being encoded automatically.  Conversely, the record data in the file is loaded after being decoded automatically.  Compression allows you to store large records into smaller files.  Encryption allows you to store secret records in local files safely.</p>
 
 <p>Tkrzw adopts dependency injection for file implementations.  Bundled implementations support memory mapping I/O, normal read/write I/O, and direct block I/O.  You can inject your own implementations to support specific data storages and file systems.  Whereas such file implementations use APIs (system calls) of the underlying operating systems, the upper layer for database algorithms doesn't depend on them so that the maximum portability is achieved.  Tkrzw supports any Unix-like systems and Windows.</p>
 
@@ -1403,7 +1405,7 @@ int main(int argc, char** argv) {
 
 <p>There are two kinds of nodes of B+ tree: leaf nodes and inner nodes.  Leaf nodes contain records of key-value pairs.  Inner nodes contain keys and links to other nodes.  The root ID indicates the ID of the root node of B+ tree.  The root node is used as the entry point of search.  The first ID indicates the ID of the first leaf node of B+ tree.  Leaf nodes are linked in a double linked list and the first leaf node is the entry point of sequential access.  The level of the tree indicates how many layers exist in the tree.  If there's no inner tree, the level is 1.</p>
 
-<p>The key comparator type indicates a function used to compare keys of records.  The default LexicalKeyComparator is 1.  LexicalCaseKeyComparator which ignores case is 2.  DecimalKeyComparator which compares keys as numeric decimal integer expressions is 3.  HexadecimalKeyComparator which compares keys as numeric hexadecimal integer expressions is 4.  RealNumberKeyComparator which compares keys as decimal real number expressions is 5.  Their counterparts for pair strings are 101, 102, 103, and 104.  255 means that another custom comparator is set.  In that case, the comparator must be specified every time when the database is opened.</p>
+<p>The key comparator type indicates a function used to compare keys of records.  The default LexicalKeyComparator is 1.  LexicalCaseKeyComparator which ignores case is 2.  DecimalKeyComparator which compares keys as numeric decimal integer expressions is 3.  HexadecimalKeyComparator which compares keys as numeric hexadecimal integer expressions is 4.  RealNumberKeyComparator which compares keys as decimal real number expressions is 5.  SignedBigEndianKeyComparator which compares keys as big-endian binary signed integer expressions is 6.  FloatBigEndianKeyComparator which compares keys as big-endian binary floating-point number expressions is 7.  Their counterparts for pair strings are from 101 to 107.  255 means that another custom comparator is set.  In that case, the comparator must be specified every time when the database is opened.</p>
 
 <p>A leaf nodes has a key which is a 6-byte big-endian integer of its ID.  The ID is a unique number not less than 1.  Its value is serialized in the following format.  Records are sorted in ascending order of the key.</p>
 
@@ -2370,13 +2372,13 @@ int main(int argc, char** argv) {
 
 <p>Typically, an index means an inverted structure made from the main database.  The key of the index is composed of two factors: pattern for matching and the primary key of a record in the main database.  Let's say, you build a database for employees.  The primary key is the employee ID so the main database uses the employee ID as the key.  The value is a data structure composed of a personal name, a division ID, a job title, salary etc.  You make an index for division IDs because you want to know who are working for each division quickly without scanning the whole database for each query.  Then, each record of the index should be composed of a division ID and an employee ID.</p>
 
-<p>FileIndex is a class to handle a secondary index on file.  It is implemented with the file tree database.  MemIndex is a class to handle a secondary index on memory.  It is implemented with the on-memory tree database.  And, StdIndex is a template class to realize secondary indices by wrapping std::set&lt;std::pair&lt;x, Y&gt;&gt; composed of arbitrary data types.</p>
+<p>FileIndex is a class to handle a secondary index on file.  It is implemented with the file tree database.  MemIndex is a class to handle a secondary index on memory.  It is implemented with the on-memory tree database.  And, StdIndex is a template class to realize secondary indices by wrapping std::set&lt;std::pair&lt;X, Y&gt;&gt; composed of arbitrary data types.  In order to use FileIndex and MemIndex via the same interface, PolyIndex class is also provided.</p>
 
 <p>For the division ID index, the first element can be int64_t for the division ID and the second element can be int64_t for the employee ID.  Therefore, using StdIndex&lt;int64_t, int64_t&gt; is a good idea.  By having the primary key of the main database as the second element, each record becomes unique and you don't have to worry about duplication.  You can also set an arbitrary comparator to adjust the order of records.</p>
 
 <p>Secondary indices are not important data to be perpetuated on the storage because they can be reproduced as long as the main entity data exist.  Therefore, using some of memory indices is a practical solution to realize extreme throughput.  To use on-memory indices, you have to load all index entries from the main database every time when the process starts.</p>
 
-<p>For details of the API, see the API document of <a href="https://dbmx.net/tkrzw/api/classtkrzw_1_1FileIndex.html">FileIndex</a> and <a href="https://dbmx.net/tkrzw/api/classtkrzw_1_1MemIndex.html">MemIndex</a>.</p>
+<p>For details of the API, see the API document of <a href="https://dbmx.net/tkrzw/api/classtkrzw_1_1FileIndex.html">FileIndex</a>, <a href="https://dbmx.net/tkrzw/api/classtkrzw_1_1MemIndex.html">MemIndex</a>, and <a href="https://dbmx.net/tkrzw/api/classtkrzw_1_1PolyIndex.html">PolyIndex</a>.</p>
 
 <h3 id="index_example">Example Code</h3>
 
@@ -2722,6 +2724,8 @@ int main(int argc, char** argv) {
 
 <p>The generic file functions are also useful to handle flat files.  They are wrapper of PolyFile class in C++.  You can use files in the memory mapping I/O mode, the normal I/O mode, and the direct I/O mode with the same interface.  Their names begin with "tkrzw_file_" and they receive the pointer to a TkrzwFile object as the first parameter.</p>
 
+<p>The secondary index is also available.  They are wrapper of PolyIndex class in C++, which wraps both FileIndex and MemIndex.  The function names begin with "tkrzw_index_" and they receive the pointer of a TkrzwIndex object as the first parameter.</p>
+
 <p>The status of the last called database operation or file operation is stored as a thread-local variable.  You can get it with "tkrzw_get_last_status" function.  Exceptions thrown in the internal C++ code are caught implicitly.  Actually, whereas Tkrzw's code doesn't throw exceptions by itself, std::bad_alloc can be thrown by failure of the "new" operator and the "malloc" function.  In such error cases, zero, false, null, and failure values are returned and the status is set to TKRZW_STATUS_SYSTEM_ERROR.</p>
 
 <p>The library header is based on the C99 and C11 standards.  On UNIX-like systems, typically, your program is built like this:</p>
@@ -2916,7 +2920,7 @@ int main(int argc, char** argv) {
 <dd><code>--cipher_key <var>str</var></code> : Sets the encryption key for cipher compressors. (default: empty)</dd>
 <dd><code>--max_page_size <var>num</var></code> : Sets the maximum size of a page. (default: 8130 or -1)</dd>
 <dd><code>--max_branches <var>num</var></code> : Sets the maximum number of branches of inner nodes. (default: 256 or -1)</dd>
-<dd><code>--comparator <var>func</var></code> : Sets the key comparator: lex, lexcase, dec, hex, real. (default: lex)</dd>
+<dd><code>--comparator <var>func</var></code> : Sets the key comparator: lex, lexcase, dec, hex, real, float. (default: lex)</dd>
 <dt>Tuning options for SkipDBM:</dt>
 <dd><code>--offset_width <var>num</var></code> : The width to represent the offset of records. (default: 4)</dd>
 <dd><code>--step_unit <var>num</var></code> : Sets the step unit of the skip list. (default: 4)</dd>
@@ -3122,6 +3126,97 @@ $ tkrzw_dbm_util import --ulog 0 casket.tkt casket-ulog
 
 <h2 id="tips">Tips</h2>
 
+<h3 id="tips_structured">Storing Structured Data</h3>
+
+<p>If you want to store structued records in the database, using std::map&lt;string, string&gt; as a container is practical.  Serialize each attribute of various types into a string and set it as a record of a string map.  Then, serialize the map itself into a string.</p>
+
+<p>The header "<a href="https://dbmx.net/tkrzw/api/tkrzw__str__util_8h.html">tkrzw_str_util.h</a>" provides a lot of useful functions for serialization/deserialization.  For a string vector, use SerializeStrVector and DeserializeStrVector.  For basic numeric types, use SerializeBasicValue and DeserializeBasicValue.  For a vector of basic numeric types, use SerializeBasicVector and DeserializeBasicVector.  Finally, for a string map, use SerializeStrMap and DeserializeStrMap.</p>
+
+<pre><code class="language-cpp"><![CDATA[#include <map>
+#include <vector>
+#include "tkrzw_dbm_hash.h"
+#include "tkrzw_str_util.h"
+
+// Main routine.
+int main(int argc, char** argv) {
+  // All symbols of Tkrzw are under the namespace "tkrzw".
+  using namespace tkrzw;
+
+  // Creates the database manager.
+  HashDBM dbm;
+
+  // Opens a new database.
+  dbm.Open("casket.tkh", true, File::OPEN_TRUNCATE);
+
+  // Makes a map representing structured data.
+  std::map<std::string, std::string> record;
+  record["name"] = "John Doe";
+  record["id"] = SerializeBasicValue<int32_t>(98765);
+  record["rating"] = SerializeBasicValue<double>(0.8);
+  std::vector<std::string> medals = {"gold", "silver", "bronze"};
+  record["medals"] = SerializeStrVector(medals);
+  std::vector<int32_t> rivals = {123456, 654321};
+  record["rivals"] = SerializeBasicVector(rivals);
+  std::vector<double> scores = {48.9, 52.5, 60.3};
+  record["scores"] = SerializeBasicVector(scores);
+
+  // Stores the serialized string.
+  dbm.Set("john", SerializeStrMap(record));
+
+  // Retrieves the serialized string and restore it.
+  std::string serialized;
+  std::map<std::string, std::string> restored;
+  if (dbm.Get("john", &serialized).IsOK()) {
+    restored = DeserializeStrMap(serialized);
+  }
+
+  // Shows the restored content.
+  std::cout << "name: " << restored["name"] << std::endl;
+  std::cout << "id: " <<
+      DeserializeBasicValue<int32_t>(restored["id"]) << std::endl;
+  std::cout << "rating: " <<
+      DeserializeBasicValue<double>(restored["rating"]) << std::endl;
+  for (const auto& value : DeserializeStrVector(restored["medals"])) {
+    std::cout << "medals: " << value << std::endl;
+  }
+  for (const auto& value :
+           DeserializeBasicVector<int32_t>(restored["rivals"])) {
+    std::cout << "rivals: " << value << std::endl;
+  }
+  for (const auto& value :
+           DeserializeBasicVector<double>(restored["scores"])) {
+    std::cout << "scores: " << value << std::endl;
+  }
+  
+  // Closes the database.
+  dbm.Close();
+
+  return 0;
+}
+]]></code></pre>
+
+<p>Whereas interoperability of the database file itself is assured by the library, interoperability of the content of records is a responsibility of the application.  If you store binary data in records, taking care of the byte order is necessary.  As long as you use the utility functions in the above example, interoperability is assured by the library.  You can also use a standardized serialization format like JSON and Protocol Buffers.</p>
+
+<p>When you store numeric values in the record, using SerializeBasicValue and SerializeBasicVector is a straightforward way.  The two functions serialize an integer into a fixed-length byte sequence.  For example, int32_t and float take 4 bytes respectively, and int64_t and double take 8 bytes respecitively.  Meanwhile, if the value is an integer and its value is typically small, using IntToStrDelta and SerializeIntVectorDelta is a good idea.  The two functions serialize an integer into a variable-length byte sequence.  The second parameter specifies whether the zigzag encoding is applied to support negative values.  Deserialization is done by StrToIntDelta and DeserializeIntVectorDelta respecitively.</p>
+
+<pre><code class="language-cpp"><![CDATA[int64_t num = 123;
+std::string num_str = IntToStrDelta(num, true);
+int64_t restored_num = StrToIntDelta(num_str, true);
+
+uint64_t unum = 123;
+std::string unum_str = IntToStrDelta(unum, false);
+uint64_t restored_unum = StrToIntDelta(unum_str, false);
+
+std::vector<int64_t> numvec = {-123, 0, 123};
+std::string numvec_str = SerializeIntVectorDelta(numvec, true);
+std::vector<int64_t> restored_numvec = DeserializeIntVectorDelta<int64_t>(numvec_str, true);
+
+std::vector<uint64_t> unumvec = {0, 123, 18235};
+std::string unumvec_str = SerializeIntVectorDelta(unumvec, false);
+std::vector<uint64_t> restored_unumvec = DeserializeIntVectorDelta<uint64_t>(unumvec_str, false);
+]]></code></pre>
+
+
 <h3 id="tips_hashdbm_tune">Tuning HashDBM</h3>
 
 <p>The file hash database uses a static hash table, whose size doesn't change implicitly.  The number of hash buckets is set when the database is created.  The load factor, which is defined as the ratio of the number of records to the number of buckets, should be less than 1, in order to maintain a good performance.  So, the number of buckets should be larger than the estimated number of records.  By default, the number of buckets is about 1 million.</p>
@@ -3315,7 +3410,7 @@ dbm.OpenAdvanced("casket.tkt", true, File::OPEN_DEFAULT, tuning_params);
 
 <h3 id="tips_treedbm_comparators">Comparators of TreeDBM</h3>
 
-<p>By default, the file tree database uses a lexical comparator which compares keys in lexicographical order.  This is suitable for many use cases.  If you want to use numeric values, representing a number as a big-endian binary is a good idea because the default comparator sorts it properly.  However, if you want, the following built-in comparator can be specified via the tuning parameters.</p>
+<p>By default, the file tree database uses a lexical comparator which compares keys in lexicographical order.  This is suitable for many use cases.  The following built-in comparator can be specified via the tuning parameters.</p>
 
 <ul>
 <li><code>LexicalKeyComparator</code> : Compares keys as strings in lexicographical order.</li>
@@ -3323,9 +3418,77 @@ dbm.OpenAdvanced("casket.tkt", true, File::OPEN_DEFAULT, tuning_params);
 <li><code>DecimalKeyComparator</code> : Compares keys as decimal integers like "1" and "99".</li>
 <li><code>HexadecimalKeyComparator</code> : Compares keys as hexadecimal integers like "8A" and "FF3C".</li>
 <li><code>RealNumberKeyComparator</code> : Compares keys as decimal real numbers like "2.1" and "-5.82".</li>
+<li><code>SignedEndianKeyComparator</code> : Compares keys as big-endian binaries of signed integers.</li>
+<li><code>FloatBigEndianKeyComparator</code> : Compares keys as big-endian binaries of floating-point numbers.</li>
 </ul>
 
-<p>You can implement your own comparator.  In that case, you must specify it every time when you open the database.</p>
+<p>You can implement your own comparator whose signature is "int32_t (*)(std::string_view, std::string_view)" aka. KeyComparator.  In that case, you must specify it as "param.key_comparator" every time when you open the database.</p>
+
+<p>If you use integers as keys, the most covenient way is to set DecimalKeyComparator as the comparator and convert keys into decimal integer strings by SPrintF or ToString.  To restore an integer from a decimal string, use StrToInt or std::atoi.</p>
+
+<pre><code class="language-cpp"><![CDATA[TreeDBM::TuningParameters params;
+params.key_comparator = DecimalKeyComparator;
+dbm.OpenAdvanced(..., params);
+dbm.Set(ToString(123), "foobarbaz");
+cout << dbm.GetSimple(ToString(123)) << endl;
+...
+if (iter.Get(&key).IsOK()) {
+  cout << StrToInt(key) << endl;
+}
+]]></code></pre>
+
+<p>If keys of integers are large numbers and you pursue space efficiency, representing keys as big-endian binary is a good idea.  The default comparator sorts them properly.  To convert keys, use IntToStrBigEndian.  When you restore a big-endian binary into an integer, use StrToIntBigEndian.</p>
+
+<pre><code class="language-cpp"><![CDATA[dbm.Open(...);
+dbm.Set(IntToStrBigEndian(123), "foobarbaz");
+cout << dbm.GetSimple(IntToStrBigEndian(123)) << endl;
+...
+if (iter.Get(&key).IsOK()) {
+  cout << StrToIntBigEndian(key) << endl;
+}
+]]></code></pre>
+
+<p>If you use real numbers as keys, the most covenient way is to set RealNumberKeyComparator as the comparator and convert keys into decimal real number strings by SPrintF or ToString.  To restore a real number from a decimal string, use StrToDouble or std::atof.</p>
+
+<pre><code class="language-cpp"><![CDATA[TreeDBM::TuningParameters params;
+params.key_comparator = RealNumberKeyComparator;
+dbm.OpenAdvanced(..., params);
+...
+dbm.Set(SPrintF("%.3f", 123.456), "foobarbaz");
+cout << dbm.GetSimple(SPrintF("%.3f", 123.456)) << endl;
+...
+if (iter.Get(&key).IsOK()) {
+  cout << StrToDouble(key) << endl;
+}
+]]></code></pre>
+
+<p>If keys of signed integers are large numbers, representing keys as big-endian binary is a good idea.  Set SignedBigEndianKeyComparator as the comparator and use IntToStrBigEndian to convert keys.  When you restore a big-endian binary into an integer, use StrToIntBigEndian and cast the return value into int64_t.</p>
+
+<pre><code class="language-cpp"><![CDATA[TreeDBM::TuningParameters params;
+params.key_comparator = SignedBigEndianKeyComparator;
+dbm.OpenAdvanced(..., params);
+...
+dbm.Set(IntToStrBigEndian(-12345678), "foobarbaz");
+cout << dbm.GetSimple(IntToStrBigEndian(-12345678)) << endl;
+...
+if (iter.Get(&key).IsOK()) {
+  cout << static_cast<int64_t>(StrToIntBigEndian(key)) << endl;
+}
+]]></code></pre>
+
+<p>If keys of real numbers are large numbers or has long fractional parts and you pursue space efficiency, representing keys as big-endian binary is a good idea.  Set FloatBigEndianKeyComparator as the comparator and use FloatToStrBigEndian to convert keys.  When you restore a big-endian binary into an integer, use StrToFloatBigEndian.</p>
+
+<pre><code class="language-cpp"><![CDATA[TreeDBM::TuningParameters params;
+params.key_comparator = FloatBigEndianKeyComparator;
+dbm.OpenAdvanced(..., params);
+...
+dbm.Set(FloatToStrBigEndian(123.456), "foobarbaz");
+cout << dbm.GetSimple(FloatToStrBigEndian(123.456)) << endl;
+...
+if (iter.Get(&key).IsOK()) {
+  cout << StrToFloatBigEndian(key) << endl;
+}
+]]></code></pre>
 
 <p>By the way, databases other than the file skip database don't support duplicated keys.  That's because duplicated keys deteriorate time and space efficiency.  If you have to handle duplicated keys, build a skip database first and merge duplicated records.  Then, you can convert it to another type of database.</p>
 
@@ -3411,7 +3574,7 @@ dbm.OpenAdvanced("casket.tkt", true, File::OPEN_DEFAULT, tuning_params);
 
 <p>Available algorithms are RC4 and AES.  Both use a private key and an initial vector (IV) to encrypt each record.  You set the private key when you open a database.  A unique IV is generated for each record and stored with the record data.  RC4 (aka. ArcFour) is a streaming encryption algorithm.  It uses 6-bit IV.  AES (aka. Rijndael) is a block encryption algorithm.  It uses 16-bit IV and padding data.  In terms of space efficiency, RC4 is better than AES.  In terms of time efficiency, it depends.  If the length of the data to compress is longer than 3000 bytes, RC4 is faster.  In terms of cipher strength, AES is better.</p>
 
-<p>You can enable a compressor by setting RECORD_COMP_RC4 or RECORD_COMP_AES to record_comp_mode of TuningParameters.  You should also set a cipher key to cipher_key of TuningParameters.  If a cipherer is enabled, record data stored in the database is encrypted automatically.  When you retrieve the record, the data is decrypted automatically.  Note that the cipher key is not stored database and you must set the cipher key every time you open the database.</p>
+<p>You can enable a compressor by setting RECORD_COMP_RC4 or RECORD_COMP_AES to record_comp_mode of TuningParameters.  You should also set a cipher key to cipher_key of TuningParameters.  If a cipherer is enabled, record data stored in the database is encrypted automatically.  When you retrieve the record, the data is decrypted automatically.  Note that the cipher key is not stored in the database and you must set the cipher key every time you open the database.</p>
 
 <p>To check performance, let's write and read 1 million records in HashDBM and TreeDBM.  The key is a 8-byte numeric string like "00000001" and "00000002".  The value is a 100-byte semi-random alphabet strings like "cvexgzibb...".</p>
 
@@ -4715,7 +4878,7 @@ $ tkrzw_dbm_perf sequence --iter 1000000 --threads 10 --random_key --dbm shard -
 
 <h3 id="tips_index_performance2">Performance of Secondary Indices</h3>
 
-<p>If you use secondary indices, choosing suitable classes is important.  FileIndex is relatively slow but the data is perpetuated in a file.  MemIndex is fast and memory efficient.  StdIndex is a template class.  Time efficiency and space efficiency differ by the types of the key and the value.  Let's say, 10 threads set 1 million records in total.  The key and the value of each record are numeric values.  We compare int64_t (from 0 to 999999) and decimal std::string (from "0" to "999999").  In addition, we check MemIndexStr which is a specialized version for memory efficiency of string-to-string use cases.</p>
+<p>If you use secondary indices, choosing suitable classes is important.  FileIndex is relatively slow but the data is perpetuated in a file.  MemIndex is fast and memory efficient.  StdIndex is a template class.  Time efficiency and space efficiency differ by the types of the key and the value.  Let's say, 10 threads set 1 million records in total.  The key and the value of each record are numeric values.  We compare int64_t (from 0 to 999999) and decimal std::string (from "0" to "999999").  In addition, we check StdIndexStr which is a specialized version for memory efficiency of string-to-string use cases.</p>
 
 <table>
 <tr>

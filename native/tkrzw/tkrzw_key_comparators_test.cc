@@ -93,6 +93,87 @@ TEST(KeyComparatorTest, RealNumberKeyComparator) {
   EXPECT_EQ(0, tkrzw::RealNumberKeyComparator("123", "123.0"));
 }
 
+TEST(KeyComparatorTest, SignedBigEndianKeyComparator) {
+  EXPECT_EQ(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(0, 8), tkrzw::IntToStrBigEndian(0, 8)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(-1, 8), tkrzw::IntToStrBigEndian(0, 8)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(1, 8), tkrzw::IntToStrBigEndian(0, 8)), 0);
+  EXPECT_EQ(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(-1, 8), tkrzw::IntToStrBigEndian(-1, 8)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(-2, 8), tkrzw::IntToStrBigEndian(-1, 8)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(0, 8), tkrzw::IntToStrBigEndian(-1, 8)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(1, 8), tkrzw::IntToStrBigEndian(-1, 8)), 0);
+  EXPECT_EQ(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(2, 8), tkrzw::IntToStrBigEndian(2, 8)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(-1, 8), tkrzw::IntToStrBigEndian(2, 8)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(1, 8), tkrzw::IntToStrBigEndian(2, 8)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(3, 8), tkrzw::IntToStrBigEndian(2, 8)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(0, 8), tkrzw::IntToStrBigEndian(tkrzw::INT64MIN, 8)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(0, 8), tkrzw::IntToStrBigEndian(tkrzw::INT64MAX, 8)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(tkrzw::INT64MAX, 8),
+      tkrzw::IntToStrBigEndian(tkrzw::INT64MIN, 8)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(tkrzw::INT64MIN, 8),
+      tkrzw::IntToStrBigEndian(tkrzw::INT64MAX, 8)), 0);
+  EXPECT_EQ(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(123, 4), tkrzw::IntToStrBigEndian(123, 8)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(123, 4), tkrzw::IntToStrBigEndian(1024, 8)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(1024, 8), tkrzw::IntToStrBigEndian(123, 4)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(123, 8), tkrzw::IntToStrBigEndian(1024, 4)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(1024, 4), tkrzw::IntToStrBigEndian(123, 8)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(-123, 4), tkrzw::IntToStrBigEndian(123, 8)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(-123, 2), tkrzw::IntToStrBigEndian(1024, 8)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(-1024, 8), tkrzw::IntToStrBigEndian(123, 4)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(-123, 1), tkrzw::IntToStrBigEndian(1024, 4)), 0);
+  EXPECT_LT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(-1024, 4), tkrzw::IntToStrBigEndian(123, 8)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(123, 1), tkrzw::IntToStrBigEndian(-123, 4)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(123, 1), tkrzw::IntToStrBigEndian(-1024, 4)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(1024, 4), tkrzw::IntToStrBigEndian(-123, 2)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(123, 4), tkrzw::IntToStrBigEndian(-1024, 2)), 0);
+  EXPECT_GT(tkrzw::SignedBigEndianKeyComparator(
+      tkrzw::IntToStrBigEndian(1024, 2), tkrzw::IntToStrBigEndian(-123, 1)), 0);
+}
+
+TEST(KeyComparatorTest, FloatBigEndianKeyComparator) {
+  EXPECT_EQ(0, tkrzw::FloatBigEndianKeyComparator("", ""));
+  EXPECT_EQ(1, tkrzw::FloatBigEndianKeyComparator(
+      std::string_view("\x00\x00\x00\x00", 4), ""));
+  EXPECT_EQ(-1, tkrzw::FloatBigEndianKeyComparator(
+      "", std::string_view("\x00\x00\x00\x00", 4)));
+  EXPECT_EQ(1, tkrzw::FloatBigEndianKeyComparator(
+      std::string_view("\x3F\x80\x00\x00", 4), std::string_view("\x00\x00\x00\x00", 4)));
+  EXPECT_EQ(-1, tkrzw::FloatBigEndianKeyComparator(
+      std::string_view("\x00\x00\x00\x00", 4), std::string_view("\x3F\x80\x00\x00", 4)));
+  EXPECT_EQ(1, tkrzw::FloatBigEndianKeyComparator(
+      std::string_view("\x3F\x80\x00\x00", 4), std::string_view("\xC6\xC0\x00\x00", 4)));
+  EXPECT_EQ(-1, tkrzw::FloatBigEndianKeyComparator(
+      std::string_view("\xC6\xC0\x00\x00", 4), std::string_view("\x3F\x80\x00\x00", 4)));
+}
+
 TEST(KeyComparatorTest, PairLexicalKeyComparator) {
   EXPECT_EQ(0, tkrzw::PairLexicalKeyComparator(
       tkrzw::SerializeStrPair("", ""), tkrzw::SerializeStrPair("", "")));
@@ -176,6 +257,33 @@ TEST(KeyComparatorTest, PairRealNumberKeyComparator) {
       tkrzw::SerializeStrPair("52.3", "a"), tkrzw::SerializeStrPair("-52.3", "b")), 0);
   EXPECT_GT(tkrzw::PairRealNumberKeyComparator(
       tkrzw::SerializeStrPair("100.0", "b"), tkrzw::SerializeStrPair("100", "a")), 0);
+}
+
+TEST(KeyComparatorTest, PairFloatBigEndianKeyComparator) {
+  EXPECT_EQ(0, tkrzw::PairFloatBigEndianKeyComparator(
+      tkrzw::SerializeStrPair("", ""), tkrzw::SerializeStrPair("", "")));
+  EXPECT_EQ(-1, tkrzw::PairFloatBigEndianKeyComparator(
+      tkrzw::SerializeStrPair("", "a"), tkrzw::SerializeStrPair("", "b")));
+  EXPECT_EQ(1, tkrzw::PairFloatBigEndianKeyComparator(
+      tkrzw::SerializeStrPair("", "b"), tkrzw::SerializeStrPair("a", "a")));
+  EXPECT_EQ(-1, tkrzw::PairFloatBigEndianKeyComparator(
+      tkrzw::SerializeStrPair(std::string_view("\x00\x00\x00\x00", 4), "x"),
+      tkrzw::SerializeStrPair(std::string_view("\x3F\x80\x00\x00", 4), "x")));
+  EXPECT_EQ(1, tkrzw::PairFloatBigEndianKeyComparator(
+      tkrzw::SerializeStrPair(std::string_view("\x3F\x80\x00\x00", 4), "x"),
+      tkrzw::SerializeStrPair(std::string_view("\x00\x00\x00\x00", 4), "x")));
+  EXPECT_EQ(-1, tkrzw::PairFloatBigEndianKeyComparator(
+      tkrzw::SerializeStrPair(std::string_view("\xC6\xC0\x00\x00", 4), "x"),
+      tkrzw::SerializeStrPair(std::string_view("\x00\x00\x00\x00", 4), "x")));
+  EXPECT_EQ(1, tkrzw::PairFloatBigEndianKeyComparator(
+      tkrzw::SerializeStrPair(std::string_view("\x00\x00\x00\x00", 4), "x"),
+      tkrzw::SerializeStrPair(std::string_view("\xC6\xC0\x00\x00", 4), "x")));
+  EXPECT_EQ(-1, tkrzw::PairFloatBigEndianKeyComparator(
+      tkrzw::SerializeStrPair(std::string_view("", 0), "x"),
+      tkrzw::SerializeStrPair(std::string_view("\xC6\xC0\x00\x00", 4), "x")));
+  EXPECT_EQ(1, tkrzw::PairFloatBigEndianKeyComparator(
+      tkrzw::SerializeStrPair(std::string_view("\xC6\xC0\x00\x00", 4), "x"),
+      tkrzw::SerializeStrPair(std::string_view("", 0), "x")));
 }
 
 // END OF FILE

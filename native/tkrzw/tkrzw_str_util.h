@@ -59,19 +59,37 @@ uint64_t StrToIntOct(std::string_view str, uint64_t defval = 0);
 uint64_t StrToIntHex(std::string_view str, uint64_t defval = 0);
 
 /**
- * Converts a big-endian binary string to an integer.
- * @param str The big endian binary string.
- * @return The converted integer.
- */
-uint64_t StrToIntBigEndian(std::string_view str);
-
-/**
  * Converts a decimal string to a real number.
  * @param str The decimal string.
  * @param defval The default value to be returned on failure.
  * @return The converted real number.
  */
 double StrToDouble(std::string_view str, double defval = 0.0);
+
+/**
+ * Converts a big-endian binary string to an integer.
+ * @param str The big endian binary string of up to 8-byte.
+ * @return The converted integer.  As the return type is unsigned, type cast is necessary to
+ * handle negative values.
+ */
+uint64_t StrToIntBigEndian(std::string_view str);
+
+/**
+ * Converts a big-endian binary string to a real number.
+ * @param str The big endian binary string of 4-byte (float), 8-byte (double), or larger
+ * (long double).
+ * @return The converted real number.
+ */
+long double StrToFloatBigEndian(std::string_view str);
+
+/**
+ * Converts a byte-delta-encoded string into an integer.
+ * @param str The big endian binary string of up to 8-byte.
+ * @param zigzag If true, negative values are also supported by applying zigzag encoding.
+ * @return The converted integer.  As the return type is unsigned, type cast is necessary to
+ * handle negative values.
+ */
+uint64_t StrToIntDelta(std::string_view str, bool zigzag);
 
 /**
  * Converts a boolean string to a boolean value.
@@ -205,13 +223,29 @@ inline std::string ToString(const std::string& data) {
 std::string IntToStrBigEndian(uint64_t data, size_t size = sizeof(uint64_t));
 
 /**
+ * Converts a floating-point number into a big-endian binary string.
+ * @param data The floating-point number to convert.
+ * @param size The size of the converted string.
+ * @return The converted string.
+ */
+std::string FloatToStrBigEndian(long double data, size_t size = sizeof(double));
+
+/**
+ * Converts an integer into a string in byte delta encoding.
+ * @param data The integer to convert.
+ * @param zigzag If true, negative values are also supported by applying zigzag encoding.
+ * @return The result string representing the values.
+ */
+std::string IntToStrDelta(uint64_t data, bool zigzag);
+
+/**
  * Converts each record of a container into strings and join them.
  * @param elems An iterable container.
  * @param delim A string to delimit elements.
  * @return The joined string.
  */
 template <typename T>
-std::string StrJoin(const T& elems, const std::string_view& delim) {
+std::string StrJoin(const T& elems, std::string_view delim) {
   std::string str;
   for (const auto& elem : elems) {
     if (!str.empty()) {
@@ -852,6 +886,287 @@ std::map<std::string, std::string> MakeStrMapFromViews(
  */
 std::map<std::string_view, std::string_view> MakeStrViewMapFromRecords(
     const std::map<std::string, std::string>& records);
+
+/**
+ * Serializes a value of a basic type into a string.
+ * @param value a value of a serializable basic type, like int32 and double.
+ * @return The result string representing the value.
+ * @details The byte order is normalized to the big-endian.  Although serializing a value of
+ * any trivially-copyable struct is also possible, it is not assured that the data is deserialized
+ * properly on another system.
+ */
+template<typename T>
+inline std::string SerializeBasicValue(T value) {
+  std::string serialized = std::string(sizeof(T), 0);
+  char* ptr = serialized.data();
+  xmemcpybigendian(ptr, &value, sizeof(value));
+  return serialized;
+}
+
+/**
+ * Deserializes a string into a value of a basic type.
+ * @param serialized The serialized string.
+ * @return The result data.
+ * @details If the size of the serialized string is not aligned to the size of the data type,
+ * zero-initialized value is returned.
+ */
+template<typename T>
+inline T DeserializeBasicValue(std::string_view serialized) {
+  T value;
+  if (serialized.size() >= sizeof(T)) {
+    xmemcpybigendian(&value, serialized.data(), sizeof(T));
+  } else {
+    std::memset(&value, 0, sizeof(T));
+  }
+  return value;
+}
+
+/**
+ * Serializes a vector of a basic type into a string.
+ * @param values a vector of a serializable basic type, like int32 and double.
+ * @return The result string representing the values.
+ * @details The byte order is normalized to the big-endian.  Although serializing a value of
+ * any trivially-copyable struct is also possible, it is not assured that the data is deserialized
+ * properly on another system.
+ */
+template<typename T>
+inline std::string SerializeBasicVector(const std::vector<T>& values) {
+  std::string serialized = std::string(sizeof(T) * values.size(), 0);
+  char* ptr = serialized.data();
+  for (const T value : values) {
+    xmemcpybigendian(ptr, &value, sizeof(value));
+    ptr += sizeof(value);
+  }
+  return serialized;
+}
+
+/**
+ * Deserializes a string into a vector of a basic type.
+ * @param serialized The serialized string.
+ * @return The result data.
+ * @details If the size of the serialized string is not aligned to the size of the data type,
+ * the last element is omitted.
+ */
+template<typename T>
+inline std::vector<T> DeserializeBasicVector(std::string_view serialized) {
+  int64_t num_elems = serialized.size() / sizeof(T);
+  std::vector<T> values;
+  values.reserve(num_elems);
+  const char* ptr = serialized.data();
+  while (num_elems > 0) {
+    T value = 0;
+    xmemcpybigendian(&value, ptr, sizeof(value));
+    values.push_back(value);
+    ptr += sizeof(value);
+    num_elems--;
+  }
+  return values;
+}
+
+/**
+ * Serializes a vector of an integer type into a string in byte delta encoding.
+ * @param values a vector of an integer type, like uint16 and int64.
+ * @param zigzag If true, negative values are also supported by applying zigzag encoding.
+ * @return The result string representing the values.
+ */
+template<typename T>
+inline std::string SerializeIntVectorDelta(const std::vector<T>& values, bool zigzag) {
+  std::string serialized;
+  serialized.reserve((values.size() + 1) * (std::max<size_t>(sizeof(T) / 2, 1)));
+  unsigned char buf[12];
+  for (const T value : values) {
+    uint64_t num = 0;
+    if (zigzag) {
+      if (static_cast<uint64_t>(value) > INT64MAX) {
+        num = static_cast<uint64_t>((value + 1) * -2) + 1;
+      } else {
+        num = value * 2;
+      }
+    } else {
+      num = static_cast<uint64_t>(value);
+    }
+    unsigned char* wp = buf;
+    if (num < (1ULL << 7)) {
+      *(wp++) = num;
+    } else if (num < (1ULL << 14)) {
+      *(wp++) = (num >> 7) | 0x80;
+      *(wp++) = num & 0x7f;
+    } else if (num < (1ULL << 21)) {
+      *(wp++) = (num >> 14) | 0x80;
+      *(wp++) = ((num >> 7) & 0x7f) | 0x80;
+      *(wp++) = num & 0x7f;
+    } else if (num < (1ULL << 28)) {
+      *(wp++) = (num >> 21) | 0x80;
+      *(wp++) = ((num >> 14) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 7) & 0x7f) | 0x80;
+      *(wp++) = num & 0x7f;
+    } else if (num < (1ULL << 35)) {
+      *(wp++) = (num >> 28) | 0x80;
+      *(wp++) = ((num >> 21) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 14) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 7) & 0x7f) | 0x80;
+      *(wp++) = num & 0x7f;
+    } else if (num < (1ULL << 42)) {
+      *(wp++) = (num >> 35) | 0x80;
+      *(wp++) = ((num >> 28) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 21) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 14) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 7) & 0x7f) | 0x80;
+      *(wp++) = num & 0x7f;
+    } else if (num < (1ULL << 49)) {
+      *(wp++) = (num >> 42) | 0x80;
+      *(wp++) = ((num >> 35) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 28) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 21) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 14) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 7) & 0x7f) | 0x80;
+      *(wp++) = num & 0x7f;
+    } else if (num < (1ULL << 56)) {
+      *(wp++) = (num >> 49) | 0x80;
+      *(wp++) = ((num >> 42) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 35) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 28) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 21) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 14) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 7) & 0x7f) | 0x80;
+      *(wp++) = num & 0x7f;
+    } else if (num < (1ULL << 63)) {
+      *(wp++) = (num >> 56) | 0x80;
+      *(wp++) = ((num >> 49) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 42) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 35) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 28) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 21) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 14) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 7) & 0x7f) | 0x80;
+      *(wp++) = num & 0x7f;
+    } else {
+      *(wp++) = (num >> 63) | 0x80;
+      *(wp++) = ((num >> 56) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 49) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 42) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 35) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 28) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 21) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 14) & 0x7f) | 0x80;
+      *(wp++) = ((num >> 7) & 0x7f) | 0x80;
+      *(wp++) = num & 0x7f;
+    }
+    serialized.append(reinterpret_cast<const char*>(buf), wp - buf);
+  }
+  return serialized;
+}
+
+/**
+ * Deserializes a byte-delta-encoded string into a vector of an integer type.
+ * @param serialized The serialized string in byte delta encoding.
+ * @param zigzag If true, negative values are also supported by applying zigzag encoding.
+ * @return The result data.
+ */
+template<typename T>
+inline std::vector<T> DeserializeIntVectorDelta(std::string_view serialized, bool zigzag) {
+  std::vector<T> values;
+  values.reserve((serialized.size() + 1) / std::max<size_t>(sizeof(T) / 2, 1));
+  const char* rp = serialized.data();
+  const char* ep = rp + serialized.size();
+  while (rp < ep) {
+    uint64_t num = 0;
+    uint32_t c = 0;
+    do {
+      if (rp >= ep) {
+        break;
+      }
+      c = *rp;
+      num = (num << 7) + (c & 0x7f);
+      rp++;
+    } while (c >= 0x80);
+    if (zigzag) {
+      if (num & 0x1) {
+        values.push_back(static_cast<T>((num - 1) / 2) * -1 - 1);
+      } else {
+        values.push_back(static_cast<T>(num / 2));
+      }
+    } else {
+      values.push_back(static_cast<T>(num));
+    }
+  }
+  return values;
+}
+
+/**
+ * Simplified string_view to convey nullptr and be modifiable.
+ */
+class NullableStringView {
+ public:
+  /**
+   * Constructor for an undefined region.
+   */
+  NullableStringView() : data_(nullptr), size_(0) {}
+
+  /**
+   * Constructor for a C-string.
+   */
+  explicit NullableStringView(const char* str) : data_(str), size_(strlen(str)) {}
+
+  /**
+   * Constructor for a specific region.
+   */
+  NullableStringView(const char* data, size_t size) : data_(data), size_(size) {}
+
+  /**
+   * Constructor for a string object.
+   */
+  explicit NullableStringView(const std::string& str) : data_(str.data()), size_(str.size()) {}
+
+  /**
+   * Constructor for a string view object.
+   */
+  explicit NullableStringView(const std::string_view& str)
+      : data_(str.data()), size_(str.size()) {}
+
+  /**
+   * Gets the pointer to the data region.
+   */
+  const char* data() const {
+    return data_;
+  }
+
+  /**
+   * Gets the size of the region.
+   */
+  size_t size() const {
+    return size_;
+  }
+
+  /**
+   * Gets the string_view object.
+   */
+  std::string_view Get() const {
+    return std::string_view(data_, size_);
+  }
+
+  /**
+   * Sets the data.
+   */
+  void Set(const char* data, size_t size) {
+    data_ = data;
+    size_ = size;
+  }
+
+  /**
+   * Sets the data by a string view.
+   */
+  void Set(std::string_view str) {
+    data_ = str.data();
+    size_ = str.size();
+  }
+
+ private:
+  /** The pointer to the data region. */
+  const char* data_;
+  /** The size of the region. */
+  size_t size_;
+};
 
 /**
  * Wrapper of string_view of allocated memory.

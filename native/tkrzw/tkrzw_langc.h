@@ -122,6 +122,22 @@ typedef struct {
   void* _dummy_;
 } TkrzwFile;
 
+/**
+ * Index interface, just for type check.
+ */
+typedef struct {
+  /** A dummy member which is never used. */
+  void* _dummy_;
+} TkrzwIndex;
+
+/**
+ * Index iterator interface, just for type check.
+ */
+typedef struct {
+  /** A dummy member which is never used. */
+  void* _dummy_;
+} TkrzwIndexIter;
+
 /** The special string_view value to represent any data. */
 extern const char* const TKRZW_ANY_DATA;
 
@@ -200,13 +216,13 @@ void tkrzw_set_last_status(int32_t code, const char* message);
  * @details The region of the message string is available until the this function or
  * tkrzw_get_last_status_message function is called next time.
  */
-TkrzwStatus tkrzw_get_last_status();
+TkrzwStatus tkrzw_get_last_status(void);
 
 /**
  * Gets the status code of the last system operation.
  * @return The status code of the last system operation.
  */
-int32_t tkrzw_get_last_status_code();
+int32_t tkrzw_get_last_status_code(void);
 
 /**
  * Gets the status message of the last system operation.
@@ -214,7 +230,7 @@ int32_t tkrzw_get_last_status_code();
  * @details The region of the message string is available until the this function or
  * tkrzw_get_last_status function is called next time.
  */
-const char* tkrzw_get_last_status_message();
+const char* tkrzw_get_last_status_message(void);
 
 /**
  * Gets the string name of a status code.
@@ -227,19 +243,19 @@ const char* tkrzw_status_code_name(int32_t code);
  * Gets the number of seconds since the UNIX epoch.
  * @return The number of seconds since the UNIX epoch with microsecond precision.
  */
-double tkrzw_get_wall_time();
+double tkrzw_get_wall_time(void);
 
 /**
  * Gets the memory capacity of the platform.
  * @return The memory capacity of the platform in bytes, or -1 on failure.
  */
-int64_t tkrzw_get_memory_capacity();
+int64_t tkrzw_get_memory_capacity(void);
 
 /**
  * Gets the current memory usage of the process.
  * @return The current memory usage of the process in bytes, or -1 on failure.
  */
-int64_t tkrzw_get_memory_usage();
+int64_t tkrzw_get_memory_usage(void);
 
 /**
  * Primary hash function for the hash database.
@@ -311,6 +327,39 @@ char* tkrzw_str_replace_regex(const char* text, const char* pattern, const char*
  * @return The Levenshtein edit distance of the two strings.
  */
 int32_t tkrzw_str_edit_distance_lev(const char* a, const char* b, bool utf);
+
+/**
+ * Converts a big-endian binary string to an integer.
+ * @param ptr The pointer to the string to convert.
+ * @param size The size of the string to convert.
+ * @return The converted integer.  As the return type is unsigned, type cast is necessary to
+ * handle negative values.
+ */
+uint64_t tkrzw_str_to_int_be(const void* ptr, size_t size);
+
+/**
+ * Converts a big-endian binary string to a floating-point number.
+ * @param ptr The pointer to the string to convert.
+ * @param size The size of the string to convert.
+ * @return The converted floating-point number.
+ */
+long double tkrzw_str_to_float_be(const void* ptr, size_t size);
+
+/**
+ * Converts an integer into a big-endian binary string.
+ * @param data The integer to convert.
+ * @param size The size of the converted string.
+ * @return The pointer to the result binary string, which should be released by the free function.
+ */
+char* tkrzw_int_to_str_be(uint64_t data, size_t size);
+
+/**
+ * Converts a floating-point number into a big-endian binary string.
+ * @param data The floating-point number to convert.
+ * @param size The size of the converted string.
+ * @return The pointer to the result binary string, which should be released by the free function.
+ */
+char* tkrzw_float_to_str_be(long double data, size_t size);
 
 /**
  * Escapes C-style meta characters in a string.
@@ -436,7 +485,7 @@ int64_t tkrzw_future_get_int(TkrzwFuture* future);
  * Opens a database file and makes a database object.
  * @param path A path of the file.
  * @param writable If true, the file is writable.  If false, it is read-only.
- * @param params Optional parameters in \"key=value,key=value\" format.  The options for the file
+ * @param params Optional parameters in "key=value,key=value" format.  The options for the file
  * opening operation are set by "truncate", "no_create", "no_wait", "no_lock", and "sync_hard".
  * The option for the number of shards is set by "num_shards".  Other options are the same as
  * PolyDBM::OpenAdvanced.
@@ -835,7 +884,7 @@ bool tkrzw_dbm_clear(TkrzwDBM* dbm);
 /**
  * Rebuilds the entire database.
  * @param dbm The database object.
- * @param params Optional parameters in \"key=value,key=value\" format.  The parameters work in
+ * @param params Optional parameters in "key=value,key=value" format.  The parameters work in
  * the same way as with PolyDBM::RebuildAdvanced.
  * @return True on success or false on failure.
  */
@@ -855,7 +904,7 @@ bool tkrzw_dbm_should_be_rebuilt(TkrzwDBM* dbm);
  * @param proc The callback function to process the file, which is called while the content of
  * the file is synchronized.  If it is NULL, it is ignored.
  * @param proc_arg An arbitrary data which is given to the callback function.
- * @param params Optional parameters in \"key=value,key=value\" format.  The parameters work in
+ * @param params Optional parameters in "key=value,key=value" format.  The parameters work in
  * the same way as with PolyDBM::OpenAdvanced.
  * @return True on success or false on failure.
  */
@@ -1042,6 +1091,7 @@ bool tkrzw_dbm_iter_next(TkrzwDBMIter* iter);
 
 /**
  * Moves the iterator to the previous record.
+ * @param iter The iterator object.
  * @return True on success or false on failure.
  * @details If the current record is missing, the operation fails.  Even if there's no previous
  * record, the operation doesn't fail.  This method is suppoerted only by ordered databases.
@@ -1077,6 +1127,8 @@ bool tkrzw_dbm_iter_process(
  * If it is NULL, it is not used.
  * @param value_size The pointer to a variable which stores the size of the region containing
  * the record value.  If it is NULL, it is not used.
+ * @return True on success or false on failure.  If theres no record to fetch, false is
+ * returned.
  */
 bool tkrzw_dbm_iter_get(
     TkrzwDBMIter* iter, char** key_ptr, int32_t* key_size,
@@ -1400,7 +1452,7 @@ TkrzwFuture* tkrzw_async_dbm_clear(TkrzwAsyncDBM* async);
 /**
  * Rebuilds the entire database asynchronously.
  * @param async the asynchronous database adapter.
- * @param params Optional parameters in \"key=value,key=value\" format.  The parameters work in
+ * @param params Optional parameters in "key=value,key=value" format.  The parameters work in
  * the same way as with PolyDBM::RebuildAdvanced.
  * @return The future object to monitor the result.  The future object should be released by the
  * tkrzw_future_free function.  The result should be gotten by the tkrzw_future_get function.
@@ -1412,7 +1464,7 @@ TkrzwFuture* tkrzw_async_dbm_rebuild(TkrzwAsyncDBM* async, const char* params);
  * @param async the asynchronous database adapter.
  * @param hard True to do physical synchronization with the hardware or false to do only
  * logical synchronization with the file system.
- * @param params Optional parameters in \"key=value,key=value\" format.  The parameters work in
+ * @param params Optional parameters in "key=value,key=value" format.  The parameters work in
  * the same way as with PolyDBM::OpenAdvanced.
  * @return The future object to monitor the result.  The future object should be released by the
  * tkrzw_future_free function.  The result should be gotten by the tkrzw_future_get function.
@@ -1489,7 +1541,7 @@ TkrzwFuture* tkrzw_async_dbm_search(
  * Opens a file.
  * @param path A path of the file.
  * @param writable If true, the file is writable.  If false, it is read-only.
- * @param params Optional parameters in \"key=value,key=value\" format.
+ * @param params Optional parameters in "key=value,key=value" format.
  * @return The new file object, which should be released by the tkrzw_dbm_close function.
  * NULL is returned on failure.
  * @details The optional parameters can include options for the file opening operation.
@@ -1608,6 +1660,198 @@ char* tkrzw_file_get_path(TkrzwFile* file);
 TkrzwStr* tkrzw_file_search(
     TkrzwFile* file, const char* mode, const char* pattern_ptr, int32_t pattern_size,
     int32_t capacity, int32_t* num_matched);
+
+/**
+ * Opens an index file and makes an index object.
+ * @param path A path of the file.
+ * @param writable If true, the file is writable.  If false, it is read-only.
+ * @param params Optional parameters in "key=value,key=value" format.  The options for the file
+ * opening operation are set by "truncate", "no_create", "no_wait", "no_lock", and "sync_hard".
+ * Other options are the same as PolyIndex::Open.
+ * @return The new database object, which should be released by the tkrzw_index_close function.
+ * NULL is returned on failure.
+ * @details If the path is empty, BabyDBM is used internally, which is equivalent to using the
+ * MemIndex class.  If the path ends with ".tkt", TreeDBM is used internally, which is
+ * equivalent to using the FileIndex class.  If the key comparator of the tuning parameter is
+ * not set, PairLexicalKeyComparator is set implicitly.  Other compatible key comparators are
+ * PairLexicalCaseKeyComparator, PairDecimalKeyComparator, PairHexadecimalKeyComparator,
+ * PairRealNumberKeyComparator, PairSignedBigEndianKeyComparator, and
+ * PairFloatBigEndianKeyComparator.
+ */
+TkrzwIndex* tkrzw_index_open(const char* path, bool writable, const char* params);
+
+/**
+ * Closes the index file and releases the index object.
+ * @param index The index object.
+ * @return True on success or false on failure.
+ */
+bool tkrzw_index_close(TkrzwIndex* index);
+
+/**
+ * Checks whether a record exists in the index.
+ * @param index The index object.
+ * @param key_ptr The key pointer.
+ * @param key_size The key size.  If it is negative, strlen(key_ptr) is used.
+ * @param value_ptr The value pointer.
+ * @param value_size The value size.  If it is negative, strlen(value_ptr) is used.
+ * @return True if the record exists, or false if not.
+ */
+bool tkrzw_index_check(
+    TkrzwIndex* index, const char* key_ptr, int32_t key_size,
+    const char* value_ptr, int32_t value_size);
+
+/**
+ * Gets all values of records of a key.
+ * @param index The index object.
+ * @param key_ptr The key pointer.
+ * @param key_size The key size.  If it is negative, strlen(key_ptr) is used.
+ * @param max The maximum number of values to get.  0 means unlimited.
+ * @param num_elems The pointer to the variable to store the number of elements of the extra
+ * string array.
+ * @return The pointer to an array of all values of the key, which should be released by the
+ * tkrzw_free_str_array function.  An empty array is returned on failure.
+ */
+TkrzwStr* tkrzw_index_get_values(
+    TkrzwIndex* index, const char* key_ptr, int32_t key_size, int32_t max, int32_t* num_elems);
+
+/**
+ * Adds a record.
+ * @param index The index object.
+ * @param key_ptr The key pointer.  This can be an arbitrary expression to search the index.
+ * @param key_size The key size.  If it is negative, strlen(key_ptr) is used.
+ * @param value_ptr The value pointer.  This should be a primary value of another database.
+ * @param value_size The value size.  If it is negative, strlen(value_ptr) is used.
+ * @return True on success or false on failure.
+ */
+bool tkrzw_index_add(
+    TkrzwIndex* index, const char* key_ptr, int32_t key_size,
+    const char* value_ptr, int32_t value_size);
+
+/**
+ * Remove a record.
+ * @param index The index object.
+ * @param key_ptr The key pointer.  This can be an arbitrary expression to search the index.
+ * @param key_size The key size.  If it is negative, strlen(key_ptr) is used.
+ * @param value_ptr The value pointer.  This should be a primary value of another database.
+ * @param value_size The value size.  If it is negative, strlen(value_ptr) is used.
+ * @return True on success or false on failure.
+ */
+bool tkrzw_index_remove(
+    TkrzwIndex* index, const char* key_ptr, int32_t key_size,
+    const char* value_ptr, int32_t value_size);
+
+/**
+ * Gets the number of records.
+ * @param index The index object.
+ * @return The number of records, or -1 on failure.
+ */
+int32_t tkrzw_index_count(TkrzwIndex* index);
+
+/**
+ * Gets the path of the index file.
+ * @param index The index object.
+ * @return The pointer to the path data, which should be released by the free function.  An empty
+ * string is returned on failure.
+ */
+char* tkrzw_index_get_file_path(TkrzwIndex* index);
+
+/**
+ * Removes all records.
+ * @param index The index object.
+ * @return True on success or false on failure.
+ */
+bool tkrzw_index_clear(TkrzwIndex* index);
+
+/**
+ * Rebuilds the entire database.
+ * @param index The index object.
+ * @return True on success or false on failure.
+ */
+bool tkrzw_index_rebuild(TkrzwIndex* index);
+
+/**
+ * Synchronizes the content of the database to the file system.
+ * @param index The index object.
+ * @param hard True to do physical synchronization with the hardware or false to do only
+ * logical synchronization with the file system.
+ * @return True on success or false on failure.
+*/
+bool tkrzw_index_synchronize(TkrzwIndex* index, bool hard);
+
+/**
+ * Checks whether the database is writable.
+ * @param index The index object.
+ * @return True if the database is writable, or false if not.
+ */
+bool tkrzw_index_is_writable(TkrzwIndex* index);
+
+/**
+ * Makes an iterator for each record.
+ * @param index The index object.
+ * @return The new iterator object, which should be released by the tkrzw_index_iter_free function.
+ */
+TkrzwIndexIter* tkrzw_index_make_iterator(TkrzwIndex* index);
+
+/**
+ * Releases the iterator object.
+ * @param iter The iterator object.
+ */
+void tkrzw_index_iter_free(TkrzwIndexIter* iter);
+
+/**
+ * Initializes the iterator to indicate the first record.
+ * @param iter The iterator object.
+ */
+void tkrzw_index_iter_first(TkrzwIndexIter* iter);
+
+/**
+ * Initializes the iterator to indicate the last record.
+ * @param iter The iterator object.
+ */
+void tkrzw_index_iter_last(TkrzwIndexIter* iter);
+
+/**
+ * Initializes the iterator to indicate a specific range.
+ * @param iter The iterator object.
+ * @param key_ptr The key pointer of the lower bound.
+ * @param key_size The key size.  If it is negative, strlen(key_ptr) is used.
+ * @param value_ptr The value pointer of the lower bound.
+ * @param value_size The value size.  If it is negative, strlen(value_ptr) is used.
+ */
+void tkrzw_index_iter_jump(TkrzwIndexIter* iter, const char* key_ptr, int32_t key_size,
+                           const char* value_ptr, int32_t value_size);
+
+/**
+ * Moves the iterator to the next record.
+ * @param iter The iterator object.
+ */
+void tkrzw_index_iter_next(TkrzwIndexIter* iter);
+
+/**
+ * Moves the iterator to the previous record.
+ * @param iter The iterator object.
+ */
+void tkrzw_index_iter_previous(TkrzwIndexIter* iter);
+
+/**
+ * Gets the key and the value of the current record of the iterator.
+ * @param iter The iterator object.
+ * @param key_ptr The pointer to a variable which points to the region containing the record key.
+ * If this function returns true, the region should be released by the free function.  If it is
+ * NULL, it is not used.
+ * @param key_size The pointer to a variable which stores the size of the region containing the
+ * record key.  If it is NULL, it is not used.
+ * @param value_ptr The pointer to a variable which points to the region containing the record
+ * value.  If this function returns true, the region should be released by the free function.
+ * If it is NULL, it is not used.
+ * @param value_size The pointer to a variable which stores the size of the region containing
+ * the record value.  If it is NULL, it is not used.
+ * @return True on success or false on failure.  If theres no record to fetch, false is
+ * returned.
+ */
+bool tkrzw_index_iter_get(
+    TkrzwIndexIter* iter, char** key_ptr, int32_t* key_size,
+    char** value_ptr, int32_t* value_size);
 
 #if defined(__cplusplus)
 }

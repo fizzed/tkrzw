@@ -27,7 +27,9 @@
 
 #include "tkrzw_dbm.h"
 #include "tkrzw_dbm_baby.h"
+#include "tkrzw_dbm_poly.h"
 #include "tkrzw_dbm_tree.h"
+#include "tkrzw_file_util.h"
 #include "tkrzw_key_comparators.h"
 #include "tkrzw_lib_common.h"
 #include "tkrzw_str_util.h"
@@ -37,8 +39,8 @@ namespace tkrzw {
 
 /**
  * File secondary index implementation with TreeDBM.
- * @details All operations are thread-safe; Multiple threads can access the same database
- * concurrently.
+ * @details All operations are thread-safe; Multiple threads can access the same index
+ * concurrently.  Every opened index must be closed explicitly to avoid data corruption.
  */
 class FileIndex final {
  public:
@@ -65,7 +67,7 @@ class FileIndex final {
     void First();
 
     /**
-     * Initializes the iterator to indicate the first record.
+     * Initializes the iterator to indicate the last record.
      */
     void Last();
 
@@ -77,6 +79,16 @@ class FileIndex final {
     void Jump(std::string_view key, std::string_view value = "");
 
     /**
+     * Moves the iterator to the next record.
+     */
+    void Next();
+
+    /**
+     * Moves the iterator to the previous record.
+     */
+    void Previous();
+
+    /**
      * Gets the key and the value of the current record of the iterator.
      * @param key The pointer to a string object to contain the record key.  If it is nullptr,
      * the key data is ignored.
@@ -86,16 +98,6 @@ class FileIndex final {
      * returned.
      */
     bool Get(std::string* key = nullptr, std::string* value = nullptr);
-
-    /**
-     * Moves the iterator to the next record.
-     */
-    void Next();
-
-    /**
-     * Moves the iterator to the previous record.
-     */
-    void Previous();
 
    private:
     /**
@@ -127,7 +129,7 @@ class FileIndex final {
   FileIndex& operator =(const FileIndex& rhs) = delete;
 
   /**
-   * Opens a database file.
+   * Opens an index file.
    * @param path A path of the file.
    * @param writable If true, the file is writable.  If false, it is read-only.
    * @param options Bit-sum options for opening the file.
@@ -135,18 +137,18 @@ class FileIndex final {
    * @return The result status.
    * @details If the key comparator of the tuning parameter is nullptr, PairLexicalKeyComparator
    * is set implicitly.  Other compatible key comparators are PairLexicalCaseKeyComparator,
-   * PairDecimalKeyComparator, PairHexadecimalKeyComparator, and PairRealNumberKeyComparator.
-   * The alignment power and the
-   * maximum page size are also set implicitly to be suitable for random access.
+   * PairDecimalKeyComparator, PairHexadecimalKeyComparator, PairRealNumberKeyComparator,
+   * PairSignedBigEndianKeyComparator, and PairFloatBigEndianKeyComparator.
+   * The alignment power and the maximum page size are also set implicitly to be suitable for
+   * random access.
    */
   Status Open(const std::string& path, bool writable,
               int32_t options = File::OPEN_DEFAULT,
               const TreeDBM::TuningParameters& tuning_params = TreeDBM::TuningParameters());
 
   /**
-   * Closes the database file.
+   * Closes the index file.
    * @return The result status.
-   * @details Precondition: The database is opened.
    */
   Status Close();
 
@@ -161,7 +163,7 @@ class FileIndex final {
    * Gets all values of records of a key.
    * @param key The key to look for.
    * @param max The maximum number of values to get.  0 means unlimited.
-   * @return All values of the key.
+   * @return All values of the key.  An empty vector is returned on failure.
    */
   std::vector<std::string> GetValues(std::string_view key, size_t max = 0);
 
@@ -183,9 +185,15 @@ class FileIndex final {
 
   /**
    * Gets the number of records.
-   * @return The number of records.
+   * @return The number of records, or -1 on failure.
    */
   size_t Count();
+
+  /**
+   * Gets the path of the index file.
+   * @return The file path of the index, or an empty string on failure.
+   */
+  std::string GetFilePath();
 
   /**
    * Removes all records.
@@ -194,13 +202,13 @@ class FileIndex final {
   Status Clear();
 
   /**
-   * Rebuilds the entire database.
+   * Rebuilds the entire index.
    * @return The result status.
    */
   Status Rebuild();
 
   /**
-   * Synchronizes the content of the database to the file system.
+   * Synchronizes the content of the index to the file system.
    * @param hard True to do physical synchronization with the hardware or false to do only
    * logical synchronization with the file system.
    * @return The result status.
@@ -208,14 +216,14 @@ class FileIndex final {
   Status Synchronize(bool hard);
 
   /**
-   * Checks whether the database is open.
-   * @return True if the database is open, or false if not.
+   * Checks whether the index is open.
+   * @return True if the index is open, or false if not.
    */
   bool IsOpen() const;
 
   /**
-   * Checks whether the database is writable.
-   * @return True if the database is writable, or false if not.
+   * Checks whether the index is writable.
+   * @return True if the index is writable, or false if not.
    */
   bool IsWritable() const;
 
@@ -240,7 +248,7 @@ class FileIndex final {
 
 /**
  * On-memory secondary index implementation with BabyDBM.
- * @details All operations are thread-safe; Multiple threads can access the same database
+ * @details All operations are thread-safe; Multiple threads can access the same index
  * concurrently.
  */
 class MemIndex final {
@@ -268,7 +276,7 @@ class MemIndex final {
     void First();
 
     /**
-     * Initializes the iterator to indicate the first record.
+     * Initializes the iterator to indicate the last record.
      */
     void Last();
 
@@ -280,6 +288,16 @@ class MemIndex final {
     void Jump(std::string_view key, std::string_view value = "");
 
     /**
+     * Moves the iterator to the next record.
+     */
+    void Next();
+
+    /**
+     * Moves the iterator to the previous record.
+     */
+    void Previous();
+
+    /**
      * Gets the key and the value of the current record of the iterator.
      * @param key The pointer to a string object to contain the record key.  If it is nullptr,
      * the key data is ignored.
@@ -289,16 +307,6 @@ class MemIndex final {
      * returned.
      */
     bool Get(std::string* key = nullptr, std::string* value = nullptr);
-
-    /**
-     * Moves the iterator to the next record.
-     */
-    void Next();
-
-    /**
-     * Moves the iterator to the previous record.
-     */
-    void Previous();
 
    private:
     /**
@@ -316,7 +324,7 @@ class MemIndex final {
    * @param key_comparator The comparator of record keys.
    * @details Compatible key comparators are PairLexicalKeyComparator,
    * PairLexicalCaseKeyComparator, PairDecimalKeyComparator, PairHexadecimalKeyComparator,
-   * and PairRealNumberKeyComparator.
+   * PairRealNumberKeyComparator, and PairFloatBigEndianKeyComparator.
    */
   explicit MemIndex(KeyComparator key_comparator = PairLexicalKeyComparator);
 
@@ -380,11 +388,217 @@ class MemIndex final {
 };
 
 /**
+ * Polymorphic index manager adapter with PolyDBM.
+ * @details All operations except for Open and Close are thread-safe; Multiple threads can
+ * access the same index concurrently.  Every opened index must be closed explicitly to
+ * avoid data corruption.
+ * @details This class is a wrapper of FileIndex and MemIndex.  The Open method specifies the
+ * actuall class used internally.
+ */
+class PolyIndex final {
+ public:
+  /**
+   * Iterator for each record.
+   */
+  class Iterator {
+    friend class PolyIndex;
+   public:
+    /**
+     * Destructor.
+     */
+    ~Iterator();
+
+    /**
+     * Copy and assignment are disabled.
+     */
+    explicit Iterator(const Iterator& rhs) = delete;
+    Iterator& operator =(const Iterator& rhs) = delete;
+
+    /**
+     * Initializes the iterator to indicate the first record.
+     */
+    void First();
+
+    /**
+     * Initializes the iterator to indicate the last record.
+     */
+    void Last();
+
+    /**
+     * Initializes the iterator to indicate a specific range.
+     * @param key The key of the lower bound.
+     * @param value The value of the lower bound.
+     */
+    void Jump(std::string_view key, std::string_view value = "");
+
+    /**
+     * Moves the iterator to the next record.
+     */
+    void Next();
+
+    /**
+     * Moves the iterator to the previous record.
+     */
+    void Previous();
+
+    /**
+     * Gets the key and the value of the current record of the iterator.
+     * @param key The pointer to a string object to contain the record key.  If it is nullptr,
+     * the key data is ignored.
+     * @param value The pointer to a string object to contain the record value.  If it is nullptr,
+     * the value data is ignored.
+     * @return True on success or false on failure.  If theres no record to fetch, false is
+     * returned.
+     */
+    bool Get(std::string* key = nullptr, std::string* value = nullptr);
+
+   private:
+    /**
+     * Constructor.
+     * @param dbm_impl The database implementation object.
+     */
+    explicit Iterator(std::unique_ptr<DBM::Iterator> it);
+
+    /** Unique pointer to a DBM iterator. */
+    std::unique_ptr<DBM::Iterator> it_;
+  };
+
+  /**
+   * Default constructor.
+   */
+  PolyIndex() : iterators_(), dbm_() {}
+
+  /**
+   * Copy and assignment are disabled.
+   */
+  explicit PolyIndex(const PolyIndex& rhs) = delete;
+  PolyIndex& operator =(const PolyIndex& rhs) = delete;
+
+  /**
+   * Opens an index file.
+   * @param path A path of the file.
+   * @param writable If true, the file is writable.  If false, it is read-only.
+   * @param options Bit-sum options of File::OpenOption enums for opening the file.
+   * @param params Optional parameters.
+   * @return The result status.
+   * @details If the path is empty, BabyDBM is used internally, which is equivalent to using the
+   * MemIndex class.  If the path ends with ".tkt", TreeDBM is used internally, which is
+   * equivalent to using the FileIndex class.  If the key comparator of the tuning parameter is
+   * not set, PairLexicalKeyComparator is set implicitly.  Other compatible key comparators are
+   * PairLexicalCaseKeyComparator, PairDecimalKeyComparator, PairHexadecimalKeyComparator,
+   * PairRealNumberKeyComparator, and PairFloatBigEndianKeyComparator.  Other options can be
+   * specified as with PolyDBM::OpenAdvanced.
+   */
+  Status Open(const std::string& path, bool writable,
+              int32_t options = File::OPEN_DEFAULT,
+              const std::map<std::string, std::string>& params = {});
+
+  /**
+   * Closes the index file.
+   * @return The result status.
+   */
+  Status Close();
+
+  /**
+   * Checks whether a record exists in the index.
+   * @param key The key of the record.
+   * @param value The value of the record.
+   */
+  bool Check(std::string_view key, std::string_view value);
+
+  /**
+   * Gets all values of records of a key.
+   * @param key The key to look for.
+   * @param max The maximum number of values to get.  0 means unlimited.
+   * @return All values of the key.
+   */
+  std::vector<std::string> GetValues(std::string_view key, size_t max = 0);
+
+  /**
+   * Adds a record.
+   * @param key The key of the record.  This can be an arbitrary expression to search the index.
+   * @param value The value of the record.  This should be a primary value of another database.
+   * @return The result status.
+   */
+  Status Add(std::string_view key, std::string_view value);
+
+  /**
+   * Removes a record.
+   * @param key The key of the record.
+   * @param value The value of the record.
+   * @return The result status.
+   */
+  Status Remove(std::string_view key, std::string_view value);
+
+  /**
+   * Gets the number of records.
+   * @return The number of records, or -1 on failure.
+   */
+  size_t Count();
+
+  /**
+   * Gets the path of the index file.
+   * @return The file path of the index, or an empty string on failure.
+   */
+  std::string GetFilePath();
+
+  /**
+   * Removes all records.
+   * @return The result status.
+   */
+  Status Clear();
+
+  /**
+   * Rebuilds the entire index.
+   * @return The result status.
+   */
+  Status Rebuild();
+
+  /**
+   * Synchronizes the content of the index to the file system.
+   * @param hard True to do physical synchronization with the hardware or false to do only
+   * logical synchronization with the file system.
+   * @return The result status.
+   */
+  Status Synchronize(bool hard);
+
+  /**
+   * Checks whether the index is open.
+   * @return True if the index is open, or false if not.
+   */
+  bool IsOpen() const;
+
+  /**
+   * Checks whether the index is writable.
+   * @return True if the index is writable, or false if not.
+   */
+  bool IsWritable() const;
+
+  /**
+   * Gets the pointer to the internal database object.
+   * @return The pointer to the internal database object, or nullptr on failure.
+   */
+  PolyDBM* GetInternalDBM() const;
+
+  /**
+   * Makes an iterator for each record.
+   * @return The iterator for each record.
+   */
+  std::unique_ptr<Iterator> MakeIterator();
+
+ private:
+  /** The list of the current iterators. */
+  std::list<Iterator*> iterators_;
+  /** The database manager. */
+  PolyDBM dbm_;
+};
+
+/**
  * On-memory secondary index implementation with std::map for generic types.
  * @param KEYTYPE the key type.
  * @param VALUETYPE the value type.
  * @param CMPTYPE the comparator type.
- * @details All operations are thread-safe; Multiple threads can access the same database
+ * @details All operations are thread-safe; Multiple threads can access the same index
  * concurrently.
  */
 template <typename KEYTYPE, typename VALUETYPE,
@@ -430,6 +644,16 @@ class StdIndex final {
     void Jump(const KEYTYPE& key, const VALUETYPE& value = VALUETYPE());
 
     /**
+     * Moves the iterator to the next record.
+     */
+    void Next();
+
+    /**
+     * Moves the iterator to the previous record.
+     */
+    void Previous();
+
+    /**
      * Gets the key and the value of the current record of the iterator.
      * @param key The pointer to a string object to contain the record key.  If it is nullptr,
      * the key data is ignored.
@@ -439,16 +663,6 @@ class StdIndex final {
      * returned.
      */
     bool Get(KEYTYPE* key = nullptr, VALUETYPE* value = nullptr);
-
-    /**
-     * Moves the iterator to the next record.
-     */
-    void Next();
-
-    /**
-     * Moves the iterator to the previous record.
-     */
-    void Previous();
 
    private:
     /**
@@ -537,7 +751,7 @@ class StdIndex final {
 
 /**
  * On-memory secondary index implementation with std::map for strings.
- * @details All operations are thread-safe; Multiple threads can access the same database
+ * @details All operations are thread-safe; Multiple threads can access the same index
  * concurrently.
  * @details This is slower than StdIndex<string, string> although space efficiency is better.
  */
@@ -566,7 +780,7 @@ class StdIndexStr final {
     void First();
 
     /**
-     * Initializes the iterator to indicate the first record.
+     * Initializes the iterator to indicate the last record.
      */
     void Last();
 
@@ -578,6 +792,16 @@ class StdIndexStr final {
     void Jump(std::string_view key, std::string_view value = "");
 
     /**
+     * Moves the iterator to the next record.
+     */
+    void Next();
+
+    /**
+     * Moves the iterator to the previous record.
+     */
+    void Previous();
+
+    /**
      * Gets the key and the value of the current record of the iterator.
      * @param key The pointer to a string object to contain the record key.  If it is nullptr,
      * the key data is ignored.
@@ -587,16 +811,6 @@ class StdIndexStr final {
      * returned.
      */
     bool Get(std::string* key = nullptr, std::string* value = nullptr);
-
-    /**
-     * Moves the iterator to the next record.
-     */
-    void Next();
-
-    /**
-     * Moves the iterator to the previous record.
-     */
-    void Previous();
 
    private:
     /**
@@ -756,6 +970,10 @@ inline size_t FileIndex::Count() {
   return dbm_.CountSimple();
 }
 
+inline std::string FileIndex::GetFilePath() {
+  return dbm_.GetFilePathSimple();
+}
+
 inline Status FileIndex::Clear() {
   return dbm_.Clear();
 }
@@ -801,6 +1019,14 @@ inline void FileIndex::Iterator::Jump(std::string_view key, std::string_view val
   it_->Jump(SerializeStrPair(key, value));
 }
 
+inline void FileIndex::Iterator::Next() {
+  it_->Next();
+}
+
+inline void FileIndex::Iterator::Previous() {
+  it_->Previous();
+}
+
 inline bool FileIndex::Iterator::Get(std::string* key, std::string* value) {
   std::string record;
   if (it_->Get(&record) != Status::SUCCESS) {
@@ -817,12 +1043,143 @@ inline bool FileIndex::Iterator::Get(std::string* key, std::string* value) {
   return true;
 }
 
-inline void FileIndex::Iterator::Next() {
+inline Status PolyIndex::Open(const std::string& path, bool writable,
+                              int32_t options, const std::map<std::string, std::string>& params) {
+  std::map<std::string, std::string> mod_params = params;
+  if (path.empty()) {
+    mod_params["dbm"] = "BabyDBM";
+  }
+  const std::string base = StrLowerCase(PathToBaseName(path));
+  const std::string ext = PathToExtension(base);
+  const std::string dbm_type = StrLowerCase(SearchMap(mod_params, "dbm", ""));
+  if (ext == "tkt" || ext == "tree" || dbm_type == "tree" || dbm_type == "treedbm") {
+    if (!CheckMap(mod_params, "align_pow")) {
+      mod_params["align_pow"] = "12";
+    }
+    if (!CheckMap(mod_params, "max_page_size")) {
+      mod_params["max_page_size"] = "4080";
+    }
+  }
+  if (!CheckMap(mod_params, "key_comparator")) {
+    mod_params["key_comparator"] = "PairLexicalKeyComparator";
+  }
+  return dbm_.OpenAdvanced(path, writable, options, mod_params);
+}
+
+inline Status PolyIndex::Close() {
+  return dbm_.Close();
+}
+
+inline bool PolyIndex::Check(std::string_view key, std::string_view value) {
+  return dbm_.Get(SerializeStrPair(key, value)) == Status::SUCCESS;
+}
+
+inline std::vector<std::string> PolyIndex::GetValues(std::string_view key, size_t max) {
+  std::vector<std::string> values;
+  auto iter = dbm_.MakeIterator();
+  iter->Jump(SerializeStrPair(key, ""));
+  std::string record;
+  while (true) {
+    if (max > 0 && values.size() >= max) {
+      break;
+    }
+    if (iter->Get(&record) != Status::SUCCESS) {
+      break;
+    }
+    std::string_view rec_key, rec_value;
+    DeserializeStrPair(record, &rec_key, &rec_value);
+    if (rec_key != key) {
+      break;
+    }
+    values.emplace_back(rec_value);
+    iter->Next();
+  }
+  return values;
+}
+
+inline Status PolyIndex::Add(std::string_view key, std::string_view value) {
+  return dbm_.Set(SerializeStrPair(key, value), "");
+}
+
+inline Status PolyIndex::Remove(std::string_view key, std::string_view value) {
+  return dbm_.Remove(SerializeStrPair(key, value));
+}
+
+inline size_t PolyIndex::Count() {
+  return dbm_.CountSimple();
+}
+
+inline std::string PolyIndex::GetFilePath() {
+  return dbm_.GetFilePathSimple();
+}
+
+inline Status PolyIndex::Clear() {
+  return dbm_.Clear();
+}
+
+inline Status PolyIndex::Rebuild() {
+  return dbm_.Rebuild();
+}
+
+inline Status PolyIndex::Synchronize(bool hard) {
+  return dbm_.Synchronize(hard);
+}
+
+inline bool PolyIndex::IsOpen() const {
+  return dbm_.IsOpen();
+}
+
+inline bool PolyIndex::IsWritable() const {
+  return dbm_.IsWritable();
+}
+
+inline PolyDBM* PolyIndex::GetInternalDBM() const {
+  return const_cast<PolyDBM*>(&dbm_);
+}
+
+inline std::unique_ptr<PolyIndex::Iterator> PolyIndex::MakeIterator() {
+  std::unique_ptr<Iterator> iter(new Iterator(dbm_.MakeIterator()));
+  return iter;
+}
+
+inline PolyIndex::Iterator::Iterator(std::unique_ptr<DBM::Iterator> it) : it_(std::move(it)) {}
+
+inline PolyIndex::Iterator::~Iterator() {}
+
+inline void PolyIndex::Iterator::First() {
+  it_->First();
+}
+
+inline void PolyIndex::Iterator::Last() {
+  it_->Last();
+}
+
+inline void PolyIndex::Iterator::Jump(std::string_view key, std::string_view value) {
+  it_->Jump(SerializeStrPair(key, value));
+}
+
+inline void PolyIndex::Iterator::Next() {
   it_->Next();
 }
 
-inline void FileIndex::Iterator::Previous() {
+inline void PolyIndex::Iterator::Previous() {
   it_->Previous();
+}
+
+inline bool PolyIndex::Iterator::Get(std::string* key, std::string* value) {
+  std::string record;
+  if (it_->Get(&record) != Status::SUCCESS) {
+    return false;
+  }
+  std::string_view rec_key, rec_value;
+  DeserializeStrPair(record, &rec_key, &rec_value);
+  if (key != nullptr) {
+    *key = rec_key;
+  }
+  if (value != nullptr) {
+    *value = rec_value;
+  }
+  return true;
 }
 
 inline MemIndex::MemIndex(KeyComparator key_comparator) : dbm_(key_comparator) {}
@@ -891,6 +1248,14 @@ inline void MemIndex::Iterator::Jump(std::string_view key, std::string_view valu
   it_->Jump(SerializeStrPair(key, value));
 }
 
+inline void MemIndex::Iterator::Next() {
+  it_->Next();
+}
+
+inline void MemIndex::Iterator::Previous() {
+  it_->Previous();
+}
+
 inline bool MemIndex::Iterator::Get(std::string* key, std::string* value) {
   std::string record;
   if (it_->Get(&record) != Status::SUCCESS) {
@@ -905,14 +1270,6 @@ inline bool MemIndex::Iterator::Get(std::string* key, std::string* value) {
     *value = rec_value;
   }
   return true;
-}
-
-inline void MemIndex::Iterator::Next() {
-  it_->Next();
-}
-
-inline void MemIndex::Iterator::Previous() {
-  it_->Previous();
 }
 
 template <typename KEYTYPE, typename VALUETYPE, typename CMPTYPE>
@@ -1037,21 +1394,6 @@ void StdIndex<KEYTYPE, VALUETYPE, CMPTYPE>::Iterator::Jump(
 }
 
 template <typename KEYTYPE, typename VALUETYPE, typename CMPTYPE>
-bool StdIndex<KEYTYPE, VALUETYPE, CMPTYPE>::Iterator::Get(KEYTYPE* key, VALUETYPE* value) {
-  std::shared_lock<std::shared_timed_mutex> lock(index_->mutex_);
-  if (it_ == index_->records_.end()) {
-    return false;
-  }
-  if (key != nullptr) {
-    *key = it_->first;
-  }
-  if (value != nullptr) {
-    *value = it_->second;
-  }
-  return true;
-}
-
-template <typename KEYTYPE, typename VALUETYPE, typename CMPTYPE>
 void StdIndex<KEYTYPE, VALUETYPE, CMPTYPE>::Iterator::Next() {
   std::shared_lock<std::shared_timed_mutex> lock(index_->mutex_);
   const auto& const_records = index_->records_;
@@ -1069,6 +1411,21 @@ void StdIndex<KEYTYPE, VALUETYPE, CMPTYPE>::Iterator::Previous() {
   } else {
     --it_;
   }
+}
+
+template <typename KEYTYPE, typename VALUETYPE, typename CMPTYPE>
+bool StdIndex<KEYTYPE, VALUETYPE, CMPTYPE>::Iterator::Get(KEYTYPE* key, VALUETYPE* value) {
+  std::shared_lock<std::shared_timed_mutex> lock(index_->mutex_);
+  if (it_ == index_->records_.end()) {
+    return false;
+  }
+  if (key != nullptr) {
+    *key = it_->first;
+  }
+  if (value != nullptr) {
+    *value = it_->second;
+  }
+  return true;
 }
 
 inline StdIndexStr::~StdIndexStr() {
@@ -1175,22 +1532,6 @@ inline void StdIndexStr::Iterator::Jump(std::string_view key, std::string_view v
   it_ = const_records.lower_bound(SerializeStrPair(key, value));
 }
 
-inline bool StdIndexStr::Iterator::Get(std::string* key, std::string* value) {
-  std::shared_lock<std::shared_timed_mutex> lock(index_->mutex_);
-  if (it_ == index_->records_.end()) {
-    return false;
-  }
-  std::string_view rec_key, rec_value;
-  DeserializeStrPair(*it_, &rec_key, &rec_value);
-  if (key != nullptr) {
-    *key = rec_key;
-  }
-  if (value != nullptr) {
-    *value = rec_value;
-  }
-  return true;
-}
-
 inline void StdIndexStr::Iterator::Next() {
   std::shared_lock<std::shared_timed_mutex> lock(index_->mutex_);
   if (it_ != index_->records_.end()) {
@@ -1205,6 +1546,22 @@ inline void StdIndexStr::Iterator::Previous() {
   } else {
     --it_;
   }
+}
+
+inline bool StdIndexStr::Iterator::Get(std::string* key, std::string* value) {
+  std::shared_lock<std::shared_timed_mutex> lock(index_->mutex_);
+  if (it_ == index_->records_.end()) {
+    return false;
+  }
+  std::string_view rec_key, rec_value;
+  DeserializeStrPair(*it_, &rec_key, &rec_value);
+  if (key != nullptr) {
+    *key = rec_key;
+  }
+  if (value != nullptr) {
+    *value = rec_value;
+  }
+  return true;
 }
 
 }  // namespace tkrzw

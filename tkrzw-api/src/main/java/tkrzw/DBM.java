@@ -19,11 +19,10 @@ import java.util.Map;
 
 /**
  * Polymorphic database manager.
- * @note All operations except for open and close are thread-safe; Multiple threads can access
+ * @note All operations except for "open" and "close" are thread-safe; Multiple threads can access
  * the same database concurrently.  You can specify a data structure when you call the "open"
  * method.  Every opened database must be closed explicitly by the "close" method to avoid data
- * corruption.  Moreover, every unused database object should be destructed by the "destruct"
- * method to free resources.
+ * corruption.
  */
 public class DBM {
   static {
@@ -55,7 +54,8 @@ public class DBM {
 
   /**
    * Destructs the object and releases resources.
-   * @note The database is closed implicitly if it has not been closed.
+   * @note The database is closed implicitly if it has not been closed.  As long as you close the
+   * database explicitly, you don't have to call this method.
    */
   public native void destruct();
 
@@ -123,9 +123,10 @@ public class DBM {
    * to do no operation or "PAGE_UPDATE_WRITE" is to write immediately.
    * <li>key_comparator (string): The comparator of record keys: "LexicalKeyComparator" for
    * the lexical order, "LexicalCaseKeyComparator" for the lexical order ignoring case,
-   * "DecimalKeyComparator" for the order of the decimal integer numeric expressions,
-   * "HexadecimalKeyComparator" for the order of the hexadecimal integer numeric expressions,
-   * "RealNumberKeyComparator" for the order of the decimal real number expressions.
+   * "DecimalKeyComparator" for the order of decimal integer numeric expressions,
+   * "HexadecimalKeyComparator" for the order of hexadecimal integer numeric expressions,
+   * "RealNumberKeyComparator" for the order of decimal real number expressions, and
+   * "FloatBigEndianKeyComparator" for the order of binary float-number expressions.
    * </ul>
    * <p>For SkipDBM, these optional parameters are supported.
    * <ul>
@@ -765,7 +766,7 @@ public class DBM {
 
   /**
    * Gets the path of the database file.
-   * @return path The file path of the database, or null on failure.
+   * @return The file path of the database, or null on failure.
    */
   public native String getFilePath();
 
