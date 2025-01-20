@@ -59,7 +59,7 @@ Add the following to your maven POM file for Linux x64
 <dependency>
   <groupId>com.fizzed</groupId>
   <artifactId>tkrzw-linux-x64</artifactId>
-  <version>VERSION-HERE</version>
+  <version>0.0.8</version>
 </dependency>
 ```
 
@@ -69,7 +69,7 @@ Or MacOS arm64 (Apple silicon)
 <dependency>
   <groupId>com.fizzed</groupId>
   <artifactId>tkrzw-macos-arm64</artifactId>
-  <version>VERSION-HERE</version>
+  <version>0.0.8</version>
 </dependency>
 ```
 
@@ -79,7 +79,7 @@ Or for all operating system & arches
 <dependency>
   <groupId>com.fizzed</groupId>
   <artifactId>tkrzw-all-natives</artifactId>
-  <version>VERSION-HERE</version>
+  <version>0.0.8</version>
 </dependency>
 ```
 
@@ -91,7 +91,7 @@ To simplify versions, you may optionally want to import our BOM (bill of materia
         <dependency>
             <groupId>com.fizzed</groupId>
             <artifactId>tkrzw-bom</artifactId>
-            <version>VERSION-HERE</version>
+            <version>0.0.8</version>
             <scope>import</scope>
             <type>pom</type>
         </dependency>
