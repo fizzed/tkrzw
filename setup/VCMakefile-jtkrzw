@@ -19,7 +19,7 @@ LIBDIR = $(BASEDIR)\lib
 BINDIR = $(BASEDIR)\bin
 LIBEXECDIR = $(BASEDIR)\bin
 
-JAVAFILES = AsyncDBM.java DBM.java File.java Future.java Iterator.java Utility.java Status.java StatusException.java RecordProcessor.java Test.java
+JAVAFILES = AsyncDBM.java DBM.java File.java Future.java Index.java IndexIterator.java Iterator.java Utility.java Status.java StatusException.java RecordProcessor.java Test.java
 JAVAHEADERFILES = tkrzw_AsyncDBM.h
 HEADERFILES = 
 IMPLHEADERFILES = 

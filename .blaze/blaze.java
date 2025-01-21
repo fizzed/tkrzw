@@ -38,14 +38,15 @@ public class blaze extends PublicBlaze {
             buildScript = "setup/build-native-lib-macos-action.sh";
             autoConfTarget = "";
         } else if (nativeTarget.getOperatingSystem() == OperatingSystem.WINDOWS) {
-            buildScript = "setup/build-native-lib-windows-action.bat";
+//            buildScript = "setup/build-native-lib-windows-action.bat";
+            buildScript = "setup/build-native-lib-windows-action.ps1";
             autoConfTarget = "";
         } else {
             buildScript = "setup/build-native-lib-linux-action.sh";
             autoConfTarget = nativeTarget.toAutoConfTarget();
         }
 
-        exec(buildScript, nativeTarget.toJneOsAbi(), nativeTarget.toJneArch(), autoConfTarget)
+        exec("powershell", buildScript, nativeTarget.toJneOsAbi(), nativeTarget.toJneArch(), autoConfTarget)
             .workingDir(this.projectDir)
             .verbose()
             .run();
