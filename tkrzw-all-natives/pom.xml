@@ -86,6 +86,11 @@
             <artifactId>tkrzw-windows-arm64</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-freebsd-x64</artifactId>
+        </dependency>
+
         <!-- testing -->
 
         <dependency>

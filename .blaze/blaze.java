@@ -41,6 +41,9 @@ public class blaze extends PublicBlaze {
         } else if (nativeTarget.getOperatingSystem() == OperatingSystem.WINDOWS) {
             buildScript = "powershell";
             arguments.addAll(asList("setup/build-native-lib-windows-action.ps1", nativeTarget.toJneOsAbi(), nativeTarget.toJneArch()));
+        } else if (nativeTarget.getOperatingSystem() == OperatingSystem.FREEBSD) {
+            buildScript = "setup/build-native-lib-bsd-action.sh";
+            arguments.addAll(asList(nativeTarget.toJneOsAbi(), nativeTarget.toJneArch(), "unknown"));
         } else {
             buildScript = "setup/build-native-lib-linux-action.sh";
             arguments.addAll(asList(nativeTarget.toJneOsAbi(), nativeTarget.toJneArch(), nativeTarget.toAutoConfTarget()));
@@ -104,11 +107,11 @@ public class blaze extends PublicBlaze {
         // FreeBSD (will not easily compile on freebsd)
         //
 
-        /*new Target("freebsd", "x64")
+        new Target("freebsd", "x64")
             .setTags("build")
             .setHost("bmh-build-x64-freebsd12-1"),
 
-        *new Target("freebsd", "arm64")
+        /*new Target("freebsd", "arm64")
             .setTags("build")
             .setHost("bmh-build-arm64-freebsd13-1"),*/
 
@@ -189,7 +192,7 @@ public class blaze extends PublicBlaze {
         // everything but openbsd & freebsd
         return super.crossTestTargets().stream()
             .filter(v -> !v.getOs().contains("openbsd"))
-            .filter(v -> !v.getOs().contains("freebsd"))
+            //.filter(v -> !v.getOs().contains("freebsd"))
             .collect(Collectors.toList());
     }
 
