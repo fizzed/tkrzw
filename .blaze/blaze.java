@@ -41,7 +41,7 @@ public class blaze extends PublicBlaze {
         } else if (nativeTarget.getOperatingSystem() == OperatingSystem.WINDOWS) {
             buildScript = "powershell";
             arguments.addAll(asList("setup/build-native-lib-windows-action.ps1", nativeTarget.toJneOsAbi(), nativeTarget.toJneArch()));
-        } else if (nativeTarget.getOperatingSystem() == OperatingSystem.FREEBSD) {
+        } else if (nativeTarget.getOperatingSystem() == OperatingSystem.FREEBSD || nativeTarget.getOperatingSystem() == OperatingSystem.OPENBSD) {
             buildScript = "setup/build-native-lib-bsd-action.sh";
             arguments.addAll(asList(nativeTarget.toJneOsAbi(), nativeTarget.toJneArch(), "unknown"));
         } else {
@@ -104,30 +104,21 @@ public class blaze extends PublicBlaze {
             .setContainerImage("fizzed/buildx:x64-ubuntu18-jdk11-buildx-linux_musl-arm64"),
 
         //
-        // FreeBSD (will not easily compile on freebsd)
+        // FreeBSD
         //
 
         new Target("freebsd", "x64")
             .setTags("build")
             .setHost("bmh-build-x64-freebsd12-1"),
 
-        /*new Target("freebsd", "arm64")
-            .setTags("build")
-            .setHost("bmh-build-arm64-freebsd13-1"),*/
-
         //
-        // OpenBSD (will not easily compile on openbsd)
+        // OpenBSD
         //
 
-        /*new Target("openbsd", "x64")
+        new Target("openbsd", "x64")
             .setTags("build")
-            .setHost("bmh-build-x64-openbsd72-1"),
-
-        new Target("openbsd", "arm64")
-            .setTags("build")
-            .setHost("bmh-build-arm64-openbsd72-1"),*/
-
-
+            .setHost("bmh-build-x64-openbsd76-1"),
+        
         //
         // MacOS
         //
@@ -187,13 +178,13 @@ public class blaze extends PublicBlaze {
             });
     }
 
-    @Override
+    /*@Override
     protected List<Target> crossTestTargets() {
         // everything but openbsd & freebsd
         return super.crossTestTargets().stream()
-            .filter(v -> !v.getOs().contains("openbsd"))
+            //.filter(v -> !v.getOs().contains("openbsd"))
             //.filter(v -> !v.getOs().contains("freebsd"))
             .collect(Collectors.toList());
-    }
+    }*/
 
 }

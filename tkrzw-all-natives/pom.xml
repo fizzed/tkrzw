@@ -91,6 +91,11 @@
             <artifactId>tkrzw-freebsd-x64</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.fizzed</groupId>
+            <artifactId>tkrzw-openbsd-x64</artifactId>
+        </dependency>
+
         <!-- testing -->
 
         <dependency>

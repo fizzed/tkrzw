@@ -19,7 +19,7 @@ export JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
 # tkrzw dependency
 cd ./target/tkrzw
 ./configure --host $BUILDTARGET --enable-zlib
-make -j4 libtkrzw.a libtkrzw.so
+gmake -j4 libtkrzw.a libtkrzw.so
 
 # force static lib to be included in libjtkrzw
 rm -f ./*.so
@@ -37,7 +37,7 @@ export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$TZDIR"
 cd ../tkrzw-java
 cp ../tkrzw/libtkrzw.a .
 ./configure --host $BUILDTARGET
-make -j4
+gmake -j4
 
 TARGET_LIB=libjtkrzw.so
 ${STRIP:-strip} ./$TARGET_LIB

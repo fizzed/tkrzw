@@ -94,6 +94,12 @@
 
             <dependency>
                 <groupId>com.fizzed</groupId>
+                <artifactId>tkrzw-openbsd-x64</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fizzed</groupId>
                 <artifactId>tkrzw-all-natives</artifactId>
                 <version>${project.version}</version>
             </dependency>

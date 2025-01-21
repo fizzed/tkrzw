@@ -22,6 +22,8 @@ The following platforms are tested using the [Fizzed, Inc.](http://fizzed.com) b
 [![Linux MUSL x64](https://img.shields.io/badge/Linux%20MUSL%20x64-passing-green)](buildx-results.txt)
 [![MacOS x64](https://img.shields.io/badge/MacOS%20x64-passing-green)](buildx-results.txt)
 [![Windows arm64](https://img.shields.io/badge/Windows%20arm64-passing-green)](buildx-results.txt)
+[![FreeBSD x64](https://img.shields.io/badge/FreeBSD%20x64-passing-green)](buildx-results.txt)
+[![OpenBSD x64](https://img.shields.io/badge/OpenBSD%20x64-passing-green)](buildx-results.txt)
 
 ## Overview
 
@@ -124,6 +126,8 @@ Zip libraries must be installed for this version to run. You must also install l
 | MacOS arm64      | tkrzw-macos-arm64      | built on macos 12 monterey        |
 | Windows x64      | tkrzw-windows-x64      | targets win 7+                    |
 | Windows arm64    | tkrzw-windows-arm64    | tested on win 10+                 |
+| FreeBSD x64      | tkrzw-freebsd-x64      | targets freebsd 12+               |
+| OpenBSD x64      | tkrzw-openbsd-x64      | targets openbsd 7.6+              |
 
 ## Development
 
