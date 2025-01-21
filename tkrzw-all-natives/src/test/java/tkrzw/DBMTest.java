@@ -50,7 +50,7 @@ public class DBMTest {
 
     @Test
     public void version() {
-        assertThat(Utility.VERSION, is("1.0.27"));
+        assertThat(Utility.VERSION, is("1.0.32"));
     }
 
 }

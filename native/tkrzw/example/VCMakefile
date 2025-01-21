@@ -11,16 +11,17 @@ TKRZWLIBPATH = C:\Program Files\tkrzw\lib
 
 COMMANDFILES = helloworld.exe accesscounter.exe transfer.exe \
   hashdbm_ex1.exe hashdbm_ex2.exe hashdbm_ex3.exe \
-  treedbm_ex1.exe treedbm_ex2.exe treedbm_ex3.exe \
+  treedbm_ex1.exe treedbm_ex2.exe treedbm_ex3.exe treedbm_ex4.exe \
   skipdbm_ex1.exe skipdbm_ex2.exe skipdbm_ex3.exe \
   tinydbm_ex1.exe tinydbm_ex2.exe \
   babydbm_ex1.exe babydbm_ex2.exe \
   cachedbm_ex1.exe \
   stdtreedbm_ex1.exe stdtreedbm_ex2.exe \
   polydbm_ex1.exe sharddbm_ex1.exe asyncdbm_ex1.exe \
-  fileindex_ex1.exe stdindex_ex1.exe \
+  struct_ex1.exe \
+  fileindex_ex1.exe stdindex_ex1.exe polyindex_ex1.exe \
   invindex_ex1.exe \
-  langc_ex1.exe
+  langc_ex1.exe langc_ex2.exe langc_ex3.exe
 
 CL = cl
 LINK = link
@@ -80,6 +81,9 @@ treedbm_ex2.exe : treedbm_ex2.obj
 treedbm_ex3.exe : treedbm_ex3.obj
 	$(LINK) $(LINKFLAGS) /OUT:$@ treedbm_ex3.obj tkrzw.lib
 
+treedbm_ex4.exe : treedbm_ex4.obj
+	$(LINK) $(LINKFLAGS) /OUT:$@ treedbm_ex4.obj tkrzw.lib
+
 skipdbm_ex1.exe : skipdbm_ex1.obj
 	$(LINK) $(LINKFLAGS) /OUT:$@ skipdbm_ex1.obj tkrzw.lib
 
@@ -119,14 +123,26 @@ sharddbm_ex1.exe : sharddbm_ex1.obj
 asyncdbm_ex1.exe : asyncdbm_ex1.obj
 	$(LINK) $(LINKFLAGS) /OUT:$@ asyncdbm_ex1.obj tkrzw.lib
 
+struct_ex1.exe : struct_ex1.obj
+	$(LINK) $(LINKFLAGS) /OUT:$@ struct_ex1.obj tkrzw.lib
+
 fileindex_ex1.exe : fileindex_ex1.obj
 	$(LINK) $(LINKFLAGS) /OUT:$@ fileindex_ex1.obj tkrzw.lib
 
 stdindex_ex1.exe : stdindex_ex1.obj
 	$(LINK) $(LINKFLAGS) /OUT:$@ stdindex_ex1.obj tkrzw.lib
 
+polyindex_ex1.exe : polyindex_ex1.obj
+	$(LINK) $(LINKFLAGS) /OUT:$@ polyindex_ex1.obj tkrzw.lib
+
 invindex_ex1.exe : invindex_ex1.obj
 	$(LINK) $(LINKFLAGS) /OUT:$@ invindex_ex1.obj tkrzw.lib
 
 langc_ex1.exe : langc_ex1.obj
 	$(LINK) $(LINKFLAGS) /OUT:$@ langc_ex1.obj tkrzw.lib
+
+langc_ex2.exe : langc_ex2.obj
+	$(LINK) $(LINKFLAGS) /OUT:$@ langc_ex2.obj tkrzw.lib
+
+langc_ex3.exe : langc_ex3.obj
+	$(LINK) $(LINKFLAGS) /OUT:$@ langc_ex3.obj tkrzw.lib

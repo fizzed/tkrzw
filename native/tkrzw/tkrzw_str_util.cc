@@ -18,7 +18,17 @@
 
 namespace tkrzw {
 
-#if defined(_SYS_POSIX_) && !defined(_TKRZW_STDONLY)
+#if defined(_SYS_MACOSX_)
+
+inline void* tkrzw_memmem(const void* haystack, size_t haystacklen,
+                          const void* needle, size_t needlelen) {
+  if (needlelen == 0) {
+    return const_cast<void*>(haystack);
+  }
+  return memmem(haystack, haystacklen, needle, needlelen);
+}
+
+#elif defined(_SYS_POSIX_) && !defined(_TKRZW_STDONLY)
 
 inline void* tkrzw_memmem(const void* haystack, size_t haystacklen,
                           const void* needle, size_t needlelen) {
@@ -238,14 +248,6 @@ uint64_t StrToIntHex(std::string_view str, uint64_t defval) {
   return num;
 }
 
-uint64_t StrToIntBigEndian(std::string_view str) {
-  if (str.empty()) {
-    return 0;
-  }
-  const size_t size = std::min(str.size(), sizeof(uint64_t));
-  return ReadFixNum(str.data(), size);
-}
-
 double StrToDouble(std::string_view str, double defval) {
   const unsigned char* rp = reinterpret_cast<const unsigned char*>(str.data());
   const unsigned char* ep = rp + str.size();
@@ -309,6 +311,46 @@ double StrToDouble(std::string_view str, double defval) {
   return num * sign;
 }
 
+uint64_t StrToIntBigEndian(std::string_view str) {
+  if (str.empty()) {
+    return 0;
+  }
+  const size_t size = std::min(str.size(), sizeof(uint64_t));
+  return ReadFixNum(str.data(), size);
+}
+
+long double StrToFloatBigEndian(std::string_view str) {
+  if (str.size() >= sizeof(long double)) {
+    long double num = 0;
+    xmemcpybigendian(&num, str.data(), sizeof(num));
+    return num;
+  }
+  if (str.size() >= sizeof(double)) {
+    double num = 0;
+    xmemcpybigendian(&num, str.data(), sizeof(num));
+    return num;
+  }
+  if (str.size() >= sizeof(float)) {
+    float num = 0;
+    xmemcpybigendian(&num, str.data(), sizeof(num));
+    return num;
+  }
+  return DOUBLENAN;
+}
+
+uint64_t StrToIntDelta(std::string_view str, bool zigzag) {
+  uint64_t num = 0;
+  ReadVarNum(str.data(), str.size(), &num);
+  if (zigzag) {
+    if (num & 0x1) {
+      num = static_cast<int64_t>((num - 1) / 2) * -1 - 1;
+    } else {
+      num = num / 2;
+    }
+  }
+  return num;
+}
+
 void VSPrintF(std::string* dest, const char* format, va_list ap) {
   assert(dest != nullptr && format != nullptr);
   while (*format != '\0') {
@@ -343,33 +385,33 @@ void VSPrintF(std::string* dest, const char* format, va_list ap) {
         }
         case 'd': {
           char tbuf[NUM_BUFFER_SIZE];
-          size_t tsiz;
+          size_t tsiz = 0;
           if (lnum >= 2) {
-            tsiz = std::sprintf(tbuf, cbuf, va_arg(ap, long long));
+            tsiz = std::snprintf(tbuf, sizeof(tbuf), cbuf, va_arg(ap, long long));
           } else if (lnum >= 1) {
-            tsiz = std::sprintf(tbuf, cbuf, va_arg(ap, long));
+            tsiz = std::snprintf(tbuf, sizeof(tbuf), cbuf, va_arg(ap, long));
           } else {
-            tsiz = std::sprintf(tbuf, cbuf, va_arg(ap, int));
+            tsiz = std::snprintf(tbuf, sizeof(tbuf), cbuf, va_arg(ap, int));
           }
           dest->append(tbuf, tsiz);
           break;
         }
         case 'o': case 'u': case 'x': case 'X': case 'c': {
           char tbuf[NUM_BUFFER_SIZE];
-          size_t tsiz;
+          size_t tsiz = 0;
           if (lnum >= 2) {
-            tsiz = std::sprintf(tbuf, cbuf, va_arg(ap, unsigned long long));
+            tsiz = std::snprintf(tbuf, sizeof(tbuf), cbuf, va_arg(ap, unsigned long long));
           } else if (lnum >= 1) {
-            tsiz = std::sprintf(tbuf, cbuf, va_arg(ap, unsigned long));
+            tsiz = std::snprintf(tbuf, sizeof(tbuf), cbuf, va_arg(ap, unsigned long));
           } else {
-            tsiz = std::sprintf(tbuf, cbuf, va_arg(ap, unsigned int));
+            tsiz = std::snprintf(tbuf, sizeof(tbuf), cbuf, va_arg(ap, unsigned int));
           }
           dest->append(tbuf, tsiz);
           break;
         }
         case 'e': case 'E': case 'f': case 'g': case 'G': {
           char tbuf[NUM_BUFFER_SIZE * 2];
-          size_t tsiz;
+          size_t tsiz = 0;
           if (lnum >= 1) {
             tsiz = std::snprintf(tbuf, sizeof(tbuf), cbuf, va_arg(ap, long double));
           } else {
@@ -384,7 +426,7 @@ void VSPrintF(std::string* dest, const char* format, va_list ap) {
         }
         case 'p': {
           char tbuf[NUM_BUFFER_SIZE];
-          size_t tsiz = std::sprintf(tbuf, "%p", va_arg(ap, void*));
+          size_t tsiz = std::snprintf(tbuf, sizeof(tbuf), "%p", va_arg(ap, void*));
           dest->append(tbuf, tsiz);
           break;
         }
@@ -402,7 +444,7 @@ void VSPrintF(std::string* dest, const char* format, va_list ap) {
 
 std::string ToString(double data) {
   char buf[NUM_BUFFER_SIZE];
-  int32_t size = std::sprintf(buf, "%.6f", data);
+  int32_t size = std::snprintf(buf, sizeof(buf), "%.6f", data);
   while (size > 0 && buf[size - 1] == '0') {
     buf[size--] = '\0';
   }
@@ -460,6 +502,33 @@ std::string IntToStrBigEndian(uint64_t data, size_t size) {
   std::string str(size, 0);
   WriteFixNum(const_cast<char*>(str.data()), data, size);
   return str;
+}
+
+std::string FloatToStrBigEndian(long double data, size_t size) {
+  std::string str(size, 0);
+  if (size >= sizeof(long double)) {
+    xmemcpybigendian(const_cast<char*>(str.data()), &data, sizeof(data));
+  } else if (size >= sizeof(double)) {
+    const double num = static_cast<double>(data);
+    xmemcpybigendian(const_cast<char*>(str.data()), &num, sizeof(num));
+  } else if (size >= sizeof(float)) {
+    const float num = static_cast<float>(data);
+    xmemcpybigendian(const_cast<char*>(str.data()), &num, sizeof(num));
+  }
+  return str;
+}
+
+std::string IntToStrDelta(uint64_t data, bool zigzag) {
+  char buf[12];
+  if (zigzag) {
+    if (data > INT64MAX) {
+      data = (data + 1) * -2 + 1;
+    } else {
+      data = data * 2;
+    }
+  }
+  const size_t size = WriteVarNum(buf, data);
+  return std::string(buf, size);
 }
 
 std::vector<std::string> StrSplit(std::string_view str, char delim, bool skip_empty) {
@@ -1309,7 +1378,6 @@ int32_t StrWordSearch(std::string_view text, std::string_view pattern) {
       size = text.size() - (rp - text.data());
       continue;
     }
-
     return pv - text.data();
   }
   return -1;

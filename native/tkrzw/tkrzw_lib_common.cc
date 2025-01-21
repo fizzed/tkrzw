@@ -92,6 +92,19 @@ void xfreealigned(void* ptr) {
 #endif
 }
 
+void* xmemcpybigendian(void* dest, const void* src, size_t width) {
+  if (_IS_BIG_ENDIAN) {
+    std::memcpy(dest, src, width);
+  } else {
+    char* wp = reinterpret_cast<char*>(dest);
+    const char* rp = reinterpret_cast<const char*>(src) + width - 1;
+    while (rp >= src) {
+      *(wp++) = *(rp--);
+    }
+  }
+  return dest;
+}
+
 int64_t GetProcessID() {
 #if defined(_SYS_WINDOWS_)
   return GetCurrentProcessId();
@@ -239,6 +252,7 @@ Status GetErrnoStatus(const char* call_name, int32_t sys_err_num) {
     case EAGAIN: return Status(Status::SYSTEM_ERROR, msg("temporarily unavailable"));
     case EINTR: return Status(Status::SYSTEM_ERROR, msg("interrupted by a signal"));
     case EACCES: return Status(Status::PERMISSION_ERROR, msg("permission denied"));
+    case EPERM: return Status(Status::PERMISSION_ERROR, msg("operation not permitted"));
     case ENOENT: return Status(Status::NOT_FOUND_ERROR, msg("no such file"));
     case ENOTDIR: return Status(Status::NOT_FOUND_ERROR, msg("not a directory"));
     case EISDIR: return Status(Status::INFEASIBLE_ERROR, msg("duplicated directory"));

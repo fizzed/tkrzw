@@ -112,6 +112,21 @@ TEST(StrUtilTest, StrToIntHex) {
   EXPECT_EQ(0xFF, tkrzw::StrToIntHex(std::string("hoge"), 0xFF));
 }
 
+TEST(StrUtilTest, StrToDouble) {
+  EXPECT_DOUBLE_EQ(0.0, tkrzw::StrToDouble(""));
+  EXPECT_DOUBLE_EQ(1.0, tkrzw::StrToDouble("1"));
+  EXPECT_DOUBLE_EQ(23.4, tkrzw::StrToDouble("23.4"));
+  EXPECT_DOUBLE_EQ(-56.7, tkrzw::StrToDouble("-56.7"));
+  EXPECT_DOUBLE_EQ(-0.125, tkrzw::StrToDouble(" - .125 "));
+  EXPECT_TRUE(std::isinf(tkrzw::StrToDouble("inf")));
+  EXPECT_TRUE(std::isnan(tkrzw::StrToDouble("nan")));
+  EXPECT_DOUBLE_EQ(500.0, tkrzw::StrToDouble("5e2"));
+  EXPECT_DOUBLE_EQ(0.05, tkrzw::StrToDouble("5e-2"));
+  EXPECT_DOUBLE_EQ(-123.0, tkrzw::StrToDouble("hoge", -123.0));
+  EXPECT_DOUBLE_EQ(1.25, tkrzw::StrToDouble(std::string("1.25")));
+  EXPECT_DOUBLE_EQ(-123.0, tkrzw::StrToDouble(std::string("hoge"), -123.0));
+}
+
 TEST(StrUtilTest, StrToIntBigEndian) {
   EXPECT_EQ(0x0, tkrzw::StrToIntBigEndian(std::string_view("", 0)));
   EXPECT_EQ(0x00, tkrzw::StrToIntBigEndian(std::string_view("\x00", 1)));
@@ -127,19 +142,45 @@ TEST(StrUtilTest, StrToIntBigEndian) {
       std::string_view("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", 8)));
 }
 
-TEST(StrUtilTest, StrToDouble) {
-  EXPECT_DOUBLE_EQ(0.0, tkrzw::StrToDouble(""));
-  EXPECT_DOUBLE_EQ(1.0, tkrzw::StrToDouble("1"));
-  EXPECT_DOUBLE_EQ(23.4, tkrzw::StrToDouble("23.4"));
-  EXPECT_DOUBLE_EQ(-56.7, tkrzw::StrToDouble("-56.7"));
-  EXPECT_DOUBLE_EQ(-0.125, tkrzw::StrToDouble(" - .125 "));
-  EXPECT_TRUE(std::isinf(tkrzw::StrToDouble("inf")));
-  EXPECT_TRUE(std::isnan(tkrzw::StrToDouble("nan")));
-  EXPECT_DOUBLE_EQ(500.0, tkrzw::StrToDouble("5e2"));
-  EXPECT_DOUBLE_EQ(0.05, tkrzw::StrToDouble("5e-2"));
-  EXPECT_DOUBLE_EQ(-123.0, tkrzw::StrToDouble("hoge", -123.0));
-  EXPECT_DOUBLE_EQ(1.25, tkrzw::StrToDouble(std::string("1.25")));
-  EXPECT_DOUBLE_EQ(-123.0, tkrzw::StrToDouble(std::string("hoge"), -123.0));
+TEST(StrUtilTest, StrToFloatBigEndian) {
+  EXPECT_TRUE(std::isnan(tkrzw::StrToFloatBigEndian(std::string_view("", 0))));
+  EXPECT_EQ(0x0, tkrzw::StrToFloatBigEndian(
+      std::string_view("\x00\x00\x00\x00", 4)));
+  EXPECT_EQ(0x0, tkrzw::StrToFloatBigEndian(
+      std::string_view("\x00\x00\x00\x00\x00\x00\x00\x00", 8)));
+  EXPECT_EQ(1, tkrzw::StrToFloatBigEndian(
+      std::string_view("\x3F\x80\x00\x00", 4)));
+  EXPECT_EQ(1, tkrzw::StrToFloatBigEndian(
+      std::string_view("\x3F\xF0\x00\x00\x00\x00\x00\x00", 8)));
+  EXPECT_EQ(tkrzw::INT16MIN * 0.75f, tkrzw::StrToFloatBigEndian(
+      std::string_view("\xC6\xC0\x00\x00", 4)));
+  EXPECT_EQ(tkrzw::INT32MIN * 0.75, tkrzw::StrToFloatBigEndian(
+      std::string_view("\xC1\xD8\x00\x00\x00\x00\x00\x00", 8)));
+}
+
+TEST(StrUtilTest, StrToIntDelta) {
+  EXPECT_EQ(0, tkrzw::StrToIntDelta(std::string_view(
+      "\x00", 1), false));
+  EXPECT_EQ(1, tkrzw::StrToIntDelta(std::string_view(
+      "\x01", 1), false));
+  EXPECT_EQ(127, tkrzw::StrToIntDelta(std::string_view(
+      "\x7F", 1), false));
+  EXPECT_EQ(128, tkrzw::StrToIntDelta(std::string_view(
+      "\x81\x00", 2), false));
+  EXPECT_EQ(tkrzw::UINT64MAX, tkrzw::StrToIntDelta(std::string_view(
+      "\x81\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x7F", 10), false));
+  EXPECT_EQ(0, tkrzw::StrToIntDelta(std::string_view(
+      "\x00", 1), true));
+  EXPECT_EQ(-1, tkrzw::StrToIntDelta(std::string_view(
+      "\x01", 1), true));
+  EXPECT_EQ(-64, tkrzw::StrToIntDelta(std::string_view(
+      "\x7F", 1), true));
+  EXPECT_EQ(64, tkrzw::StrToIntDelta(std::string_view(
+      "\x81\x00", 2), true));
+  EXPECT_EQ(tkrzw::INT64MAX, tkrzw::StrToIntDelta(std::string_view(
+      "\x81\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x7E", 10), true));
+  EXPECT_EQ(tkrzw::INT64MIN, tkrzw::StrToIntDelta(std::string_view(
+      "\x81\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x7F", 10), true));
 }
 
 TEST(StrUtilTest, StrToBool) {
@@ -239,20 +280,77 @@ TEST(StrUtilTest, ToString) {
 }
 
 TEST(StrUtilTest, IntToStrBigEndian) {
-  EXPECT_EQ(std::string ("\x00\x00\x00\x00\x00\x00\x00\x00", 8),
+  EXPECT_EQ(std::string("\x00\x00\x00\x00\x00\x00\x00\x00", 8),
             tkrzw::IntToStrBigEndian(0));
-  EXPECT_EQ(std::string ("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", 8),
+  EXPECT_EQ(std::string("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", 8),
             tkrzw::IntToStrBigEndian(-1));
-  EXPECT_EQ(std::string ("\xBE\xAF", 2),
+  EXPECT_EQ(std::string("\xBE\xAF", 2),
             tkrzw::IntToStrBigEndian(0xDEADBEAF, 2));
-  EXPECT_EQ(std::string ("\xDE\xAD\xBE\xAF", 4),
+  EXPECT_EQ(std::string("\xDE\xAD\xBE\xAF", 4),
             tkrzw::IntToStrBigEndian(0xDEADBEAF, 4));
-  EXPECT_EQ(std::string ("\x00\x00\xDE\xAD\xBE\xAF", 6),
+  EXPECT_EQ(std::string("\x00\x00\xDE\xAD\xBE\xAF", 6),
             tkrzw::IntToStrBigEndian(0xDEADBEAF, 6));
-  EXPECT_EQ(std::string ("\xAB\xCD\x12\x34\x56\x78\xAB\xCD", 8),
+  EXPECT_EQ(std::string("\xAB\xCD\x12\x34\x56\x78\xAB\xCD", 8),
             tkrzw::IntToStrBigEndian(0xABCD12345678ABCD));
-  EXPECT_EQ(std::string ("\x12", 1), tkrzw::IntToStrBigEndian(0x12, 1));
-  EXPECT_EQ("", tkrzw::IntToStrBigEndian(0x12, 0));
+  EXPECT_EQ(std::string("\x12", 1), tkrzw::IntToStrBigEndian(0x12, 1));
+  EXPECT_EQ("", tkrzw::IntToStrBigEndian(123, 0));
+  EXPECT_EQ(static_cast<uint16_t>(tkrzw::INT8MIN + 123), tkrzw::StrToIntBigEndian(
+      tkrzw::IntToStrBigEndian(static_cast<uint16_t>(tkrzw::INT8MIN + 123), sizeof(int16_t))));
+  EXPECT_EQ(static_cast<uint32_t>(tkrzw::INT16MIN + 123), tkrzw::StrToIntBigEndian(
+      tkrzw::IntToStrBigEndian(static_cast<uint32_t>(tkrzw::INT16MIN + 123), sizeof(int32_t))));
+  EXPECT_EQ(static_cast<uint64_t>(tkrzw::INT32MIN + 123), tkrzw::StrToIntBigEndian(
+      tkrzw::IntToStrBigEndian(static_cast<uint64_t>(tkrzw::INT32MIN + 123), sizeof(int64_t))));
+  EXPECT_EQ(static_cast<uint64_t>(tkrzw::INT64MIN + 123), tkrzw::StrToIntBigEndian(
+      tkrzw::IntToStrBigEndian(static_cast<uint64_t>(tkrzw::INT64MIN + 123), sizeof(int64_t))));
+}
+
+TEST(StrUtilTest, FloatToStrBigEndian) {
+  EXPECT_EQ(std::string(sizeof(double), 0),
+            tkrzw::FloatToStrBigEndian(0));
+  EXPECT_EQ(std::string(sizeof(float), 0),
+            tkrzw::FloatToStrBigEndian(0, sizeof(float)));
+  EXPECT_EQ(std::string(sizeof(double), 0),
+            tkrzw::FloatToStrBigEndian(0, sizeof(double)));
+  EXPECT_EQ(sizeof(long double),
+            tkrzw::FloatToStrBigEndian(0, sizeof(long double)).size());
+  EXPECT_EQ(std::string("\x3F\x80\x00\x00", 4),
+            tkrzw::FloatToStrBigEndian(1, 4));
+  EXPECT_EQ(std::string("\x3F\xF0\x00\x00\x00\x00\x00\x00", 8),
+            tkrzw::FloatToStrBigEndian(1, 8));
+  EXPECT_EQ(std::string("\xC6\xC0\x00\x00", 4),
+            tkrzw::FloatToStrBigEndian(tkrzw::INT16MIN * 0.75f, 4));
+  EXPECT_EQ(std::string("\xC1\xD8\x00\x00\x00\x00\x00\x00", 8),
+            tkrzw::FloatToStrBigEndian(tkrzw::INT32MIN * 0.75, 8));
+  EXPECT_EQ("", tkrzw::FloatToStrBigEndian(123, 0));
+  EXPECT_EQ(tkrzw::INT16MIN * 0.75f, tkrzw::StrToFloatBigEndian(
+      tkrzw::FloatToStrBigEndian(tkrzw::INT16MIN * 0.75f, sizeof(float))));
+  EXPECT_EQ(tkrzw::INT32MIN * 0.75f, tkrzw::StrToFloatBigEndian(
+      tkrzw::FloatToStrBigEndian(tkrzw::INT32MIN * 0.75f, sizeof(double))));
+  EXPECT_EQ(tkrzw::INT32MIN * 0.75f, tkrzw::StrToFloatBigEndian(
+      tkrzw::FloatToStrBigEndian(tkrzw::INT32MIN * 0.75f, sizeof(long double))));
+}
+
+TEST(StrUtilTest, IntToStrDelta) {
+  EXPECT_EQ(std::string("\x00", 1), tkrzw::IntToStrDelta(0, false));
+  EXPECT_EQ(std::string("\x01", 1), tkrzw::IntToStrDelta(1, false));
+  EXPECT_EQ(std::string("\x02", 1), tkrzw::IntToStrDelta(2, false));
+  EXPECT_EQ(std::string("\x7F", 1), tkrzw::IntToStrDelta(127, false));
+  EXPECT_EQ(std::string("\x81\x00", 2), tkrzw::IntToStrDelta(128, false));
+  EXPECT_EQ(std::string("\x81\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x7F", 10),
+            tkrzw::IntToStrDelta(tkrzw::UINT64MAX, false));
+  EXPECT_EQ(std::string("\x00", 1), tkrzw::IntToStrDelta(0, true));
+  EXPECT_EQ(std::string("\x01", 1), tkrzw::IntToStrDelta(-1, true));
+  EXPECT_EQ(std::string("\x02", 1), tkrzw::IntToStrDelta(1, true));
+  EXPECT_EQ(std::string("\x7F", 1), tkrzw::IntToStrDelta(-64, true));
+  EXPECT_EQ(std::string("\x81\x00", 2), tkrzw::IntToStrDelta(64, true));
+  EXPECT_EQ(std::string("\x81\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x7F", 10),
+            tkrzw::IntToStrDelta(tkrzw::INT64MIN, true));
+  EXPECT_EQ(std::string("\x81\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x7E", 10),
+            tkrzw::IntToStrDelta(tkrzw::INT64MAX, true));
+  EXPECT_EQ(1978, tkrzw::StrToIntDelta(tkrzw::IntToStrDelta(1978, false), false));
+  EXPECT_EQ(-12345678, tkrzw::StrToIntDelta(tkrzw::IntToStrDelta(-12345678, false), false));
+  EXPECT_EQ(1978, tkrzw::StrToIntDelta(tkrzw::IntToStrDelta(1978, true), true));
+  EXPECT_EQ(12345678, tkrzw::StrToIntDelta(tkrzw::IntToStrDelta(12345678, true), true));
 }
 
 TEST(StrUtilTest, StrJoin) {
@@ -263,7 +361,8 @@ TEST(StrUtilTest, StrJoin) {
   EXPECT_EQ("a,b,c", tkrzw::StrJoin(std::vector<char>({'a', 'b', 'c'}), ","));
   EXPECT_EQ("12,34", tkrzw::StrJoin(std::vector<int32_t>({12, 34}), ","));
   EXPECT_EQ("12.34,56.78", tkrzw::StrJoin(std::vector<double>({12.34, 56.78}), ","));
-  EXPECT_EQ("true,false", tkrzw::StrJoin(std::vector<bool>({true, false}), ","));
+  const std::string res = tkrzw::StrJoin(std::vector<bool>({true, false}), ",");
+  EXPECT_TRUE(res == "true,false" || res == "1,0");
 }
 
 TEST(StrUtilTest, StrCat) {
@@ -1132,6 +1231,153 @@ TEST(StrUtilTest, MakeStrMapFromViews) {
   EXPECT_EQ("hop", restored["one"]);
   EXPECT_EQ("step", restored["two"]);
   EXPECT_EQ("jump", restored["three"]);
+}
+
+TEST(StrUtilTest, SerializeBasicValue) {
+  std::string serialized = tkrzw::SerializeBasicValue<int16_t>(-123);
+  EXPECT_EQ(sizeof(int16_t), serialized.size());
+  EXPECT_EQ(-123, tkrzw::DeserializeBasicValue<int16_t>(serialized));
+  serialized = tkrzw::SerializeBasicValue<uint16_t>(tkrzw::UINT16MAX - 3);
+  EXPECT_EQ(sizeof(uint16_t), serialized.size());
+  EXPECT_EQ(tkrzw::UINT16MAX - 3, tkrzw::DeserializeBasicValue<uint16_t>(serialized));
+  serialized = tkrzw::SerializeBasicValue<int32_t>(-123);
+  EXPECT_EQ(sizeof(int32_t), serialized.size());
+  EXPECT_EQ(-123, tkrzw::DeserializeBasicValue<int32_t>(serialized));
+  serialized = tkrzw::SerializeBasicValue<uint32_t>(tkrzw::UINT32MAX - 3);
+  EXPECT_EQ(sizeof(uint32_t), serialized.size());
+  EXPECT_EQ(tkrzw::UINT32MAX - 3, tkrzw::DeserializeBasicValue<uint32_t>(serialized));
+  serialized = tkrzw::SerializeBasicValue<int64_t>(-123);
+  EXPECT_EQ(sizeof(int64_t), serialized.size());
+  EXPECT_EQ(-123, tkrzw::DeserializeBasicValue<int64_t>(serialized));
+  serialized = tkrzw::SerializeBasicValue<uint64_t>(tkrzw::UINT64MAX - 3);
+  EXPECT_EQ(sizeof(uint64_t), serialized.size());
+  EXPECT_EQ(tkrzw::UINT64MAX - 3, tkrzw::DeserializeBasicValue<uint64_t>(serialized));
+  serialized = tkrzw::SerializeBasicValue<float>(-123.456f);
+  EXPECT_EQ(sizeof(float), serialized.size());
+  EXPECT_EQ(-123.456f, tkrzw::DeserializeBasicValue<float>(serialized));
+  serialized = tkrzw::SerializeBasicValue<double>(-123.456);
+  EXPECT_EQ(sizeof(double), serialized.size());
+  EXPECT_EQ(-123.456, tkrzw::DeserializeBasicValue<double>(serialized));
+  serialized = tkrzw::SerializeBasicValue<long double>(-123.456);
+  EXPECT_EQ(sizeof(long double), serialized.size());
+  EXPECT_EQ(-123.456, tkrzw::DeserializeBasicValue<long double>(serialized));
+  EXPECT_EQ(0, tkrzw::DeserializeBasicValue<int32_t>("abc"));
+  EXPECT_EQ(std::string_view("\xDE\xAD\xBE\xEF\x01\x23\x45\x67", 8),
+            tkrzw::SerializeBasicValue<uint64_t>(0xDEADBEEF01234567));
+}
+
+TEST(StrUtilTest, SerializeBasicVector) {
+  const std::vector<int16_t> vec_int16 = {tkrzw::INT16MIN + 3, tkrzw::INT16MAX - 3};
+  std::string serialized = tkrzw::SerializeBasicVector(vec_int16);
+  EXPECT_EQ(sizeof(int16_t) * 2, serialized.size());
+  EXPECT_THAT(tkrzw::DeserializeBasicVector<int16_t>(serialized), ElementsAreArray(vec_int16));
+  const std::vector<uint16_t> vec_uint16 = {3, tkrzw::UINT16MAX - 3};
+  serialized = tkrzw::SerializeBasicVector(vec_uint16);
+  EXPECT_EQ(sizeof(uint16_t) * 2, serialized.size());
+  EXPECT_THAT(tkrzw::DeserializeBasicVector<uint16_t>(serialized), ElementsAreArray(vec_uint16));
+  const std::vector<int32_t> vec_int32 = {tkrzw::INT32MIN + 3, tkrzw::INT32MAX - 3};
+  serialized = tkrzw::SerializeBasicVector(vec_int32);
+  EXPECT_EQ(sizeof(int32_t) * 2, serialized.size());
+  EXPECT_THAT(tkrzw::DeserializeBasicVector<int32_t>(serialized), ElementsAreArray(vec_int32));
+  const std::vector<uint32_t> vec_uint32 = {3, tkrzw::UINT32MAX - 3};
+  serialized = tkrzw::SerializeBasicVector(vec_uint32);
+  EXPECT_EQ(sizeof(uint32_t) * 2, serialized.size());
+  EXPECT_THAT(tkrzw::DeserializeBasicVector<uint32_t>(serialized), ElementsAreArray(vec_uint32));
+  const std::vector<int64_t> vec_int64 = {tkrzw::INT64MIN + 3, tkrzw::INT64MAX - 3};
+  serialized = tkrzw::SerializeBasicVector(vec_int64);
+  EXPECT_EQ(sizeof(int64_t) * 2, serialized.size());
+  EXPECT_THAT(tkrzw::DeserializeBasicVector<int64_t>(serialized), ElementsAreArray(vec_int64));
+  const std::vector<uint64_t> vec_uint64 = {3, tkrzw::UINT64MAX - 3};
+  serialized = tkrzw::SerializeBasicVector(vec_uint64);
+  EXPECT_EQ(sizeof(uint64_t) * 2, serialized.size());
+  EXPECT_THAT(tkrzw::DeserializeBasicVector<uint64_t>(serialized), ElementsAreArray(vec_uint64));
+  const std::vector<float> vec_float = {123.456f, -123.456f};
+  serialized = tkrzw::SerializeBasicVector(vec_float);
+  EXPECT_EQ(sizeof(float) * 2, serialized.size());
+  EXPECT_THAT(tkrzw::DeserializeBasicVector<float>(serialized), ElementsAreArray(vec_float));
+  const std::vector<double> vec_double = {123.456, -123.456};
+  serialized = tkrzw::SerializeBasicVector(vec_double);
+  EXPECT_EQ(sizeof(double) * 2, serialized.size());
+  EXPECT_THAT(tkrzw::DeserializeBasicVector<double>(serialized), ElementsAreArray(vec_double));
+  EXPECT_EQ(0, tkrzw::DeserializeBasicVector<int32_t>("abc").size());
+  const std::vector<uint64_t> vec_deadbeef = {0xDEADBEEF01234567};
+  EXPECT_EQ(std::string_view("\xDE\xAD\xBE\xEF\x01\x23\x45\x67", 8),
+            tkrzw::SerializeBasicVector(vec_deadbeef));
+}
+
+TEST(StrUtilTest, SerializeIntVectorDelta) {
+  std::vector<uint16_t> uint16vec;
+  for (uint16_t num = 0; num < tkrzw::UINT16MAX / 2;
+       num = static_cast<uint16_t>(num * 1.4) + 1) {
+    uint16vec.push_back(num);
+  }
+  uint16vec.push_back(tkrzw::UINT16MAX);
+  const std::string uint16str = tkrzw::SerializeIntVectorDelta(uint16vec, false);
+  std::vector<uint16_t> uint16res = tkrzw::DeserializeIntVectorDelta<uint16_t>(uint16str, false);
+  EXPECT_THAT(uint16res, ElementsAreArray(uint16vec));
+  std::vector<int16_t> int16vec;
+  for (int16_t num = 0; num < tkrzw::INT16MAX / 2;
+       num = static_cast<int16_t>(num * 1.6) + 1) {
+    int16vec.push_back(-num);
+    int16vec.push_back(num);
+  }
+  int16vec.push_back(tkrzw::INT16MIN);
+  int16vec.push_back(tkrzw::INT16MAX);
+  const std::string int16str = tkrzw::SerializeIntVectorDelta(int16vec, true);
+  std::vector<int16_t> int16res = tkrzw::DeserializeIntVectorDelta<int16_t>(int16str, true);
+  EXPECT_THAT(int16res, ElementsAreArray(int16vec));
+  std::vector<uint64_t> uint64vec;
+  for (uint64_t num = 0; num < tkrzw::UINT64MAX / 2;
+       num = static_cast<uint64_t>(num * 1.5) + 1) {
+    uint64vec.push_back(num);
+  }
+  uint64vec.push_back(tkrzw::UINT64MAX);
+  const std::string uint64str = tkrzw::SerializeIntVectorDelta(uint64vec, false);
+  std::vector<uint64_t> uint64res = tkrzw::DeserializeIntVectorDelta<uint64_t>(uint64str, false);
+  EXPECT_THAT(uint64res, ElementsAreArray(uint64vec));
+  std::vector<int64_t> int64vec;
+  for (int64_t num = 0; num < tkrzw::INT64MAX / 4;
+       num = static_cast<int64_t>(num * 3.5) + 1) {
+    int64vec.push_back(-num);
+    int64vec.push_back(num);
+  }
+  int64vec.push_back(tkrzw::INT64MIN);
+  int64vec.push_back(tkrzw::INT64MAX);
+  const std::string int64str = tkrzw::SerializeIntVectorDelta(int64vec, true);
+  std::vector<int64_t> int64res = tkrzw::DeserializeIntVectorDelta<int64_t>(int64str, true);
+  EXPECT_THAT(int64res, ElementsAreArray(int64vec));
+}
+
+TEST(StrUtilTest, NullableStringView) {
+  tkrzw::NullableStringView s1;
+  EXPECT_EQ(nullptr, s1.data());
+  EXPECT_EQ(0, s1.size());
+  const char* const cstr = "foobar";
+  tkrzw::NullableStringView s2(cstr);
+  EXPECT_EQ(cstr, s2.data());
+  EXPECT_EQ(std::strlen(cstr), s2.size());
+  tkrzw::NullableStringView s3(cstr, 3);
+  EXPECT_EQ(cstr, s3.data());
+  EXPECT_EQ(3, s3.size());
+  tkrzw::NullableStringView s4(nullptr, 12345);
+  EXPECT_EQ(nullptr, s4.data());
+  EXPECT_EQ(12345, s4.size());
+  const std::string xstr("1234");
+  tkrzw::NullableStringView s5(xstr);
+  EXPECT_STREQ(xstr.data(), s5.data());
+  EXPECT_EQ(xstr.size(), s5.size());
+  tkrzw::NullableStringView s6(std::string_view("abcde"));
+  EXPECT_STREQ("abcde", s6.data());
+  EXPECT_EQ(5, s6.size());
+  std::string_view sv = s6.Get();
+  EXPECT_STREQ(s6.data(), sv.data());
+  EXPECT_EQ(s6.size(), sv.size());
+  s1.Set(cstr, strlen(cstr));
+  EXPECT_EQ(cstr, s1.data());
+  EXPECT_EQ(std::strlen(cstr), s1.size());
+  s1.Set(sv);
+  EXPECT_EQ(sv.data(), s1.data());
+  EXPECT_EQ(sv.size(), s1.size());
 }
 
 TEST(StrUtilTest, ScopedStringView) {
