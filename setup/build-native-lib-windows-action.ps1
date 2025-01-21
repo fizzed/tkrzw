@@ -1,3 +1,5 @@
+#Requires -Version 5.0
+
 $basedir = $PSScriptRoot
 $project_dir = [IO.Path]::GetFullPath("$basedir\..")
 

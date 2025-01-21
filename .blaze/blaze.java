@@ -8,6 +8,7 @@ import com.fizzed.jne.*;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import static com.fizzed.blaze.Systems.*;
@@ -32,21 +33,21 @@ public class blaze extends PublicBlaze {
         mkdir(targetDir).parents().run();
         cp(globber(nativeDir, "*")).target(targetDir).recursive().debug().run();
 
+        final List<String> arguments = new ArrayList<>();
         final String buildScript;
-        final String autoConfTarget;
         if (nativeTarget.getOperatingSystem() == OperatingSystem.MACOS) {
             buildScript = "setup/build-native-lib-macos-action.sh";
-            autoConfTarget = "";
+            arguments.addAll(asList(nativeTarget.toJneOsAbi(), nativeTarget.toJneArch()));
         } else if (nativeTarget.getOperatingSystem() == OperatingSystem.WINDOWS) {
-//            buildScript = "setup/build-native-lib-windows-action.bat";
-            buildScript = "setup/build-native-lib-windows-action.ps1";
-            autoConfTarget = "";
+            buildScript = "powershell";
+            arguments.addAll(asList("setup/build-native-lib-windows-action.ps1", nativeTarget.toJneOsAbi(), nativeTarget.toJneArch()));
         } else {
             buildScript = "setup/build-native-lib-linux-action.sh";
-            autoConfTarget = nativeTarget.toAutoConfTarget();
+            arguments.addAll(asList(nativeTarget.toJneOsAbi(), nativeTarget.toJneArch(), nativeTarget.toAutoConfTarget()));
         }
 
-        exec("powershell", buildScript, nativeTarget.toJneOsAbi(), nativeTarget.toJneArch(), autoConfTarget)
+        exec(buildScript)
+            .args(arguments.toArray(new Object[]{}))
             .workingDir(this.projectDir)
             .verbose()
             .run();
