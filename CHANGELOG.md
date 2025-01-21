@@ -5,7 +5,9 @@
  - Based on Tkrzw 1.0.32 and Tkrzw-Java 0.1.32
  - Bump JNE v4.3.0
  - Improved cross compiling and testing build system
- - Windows now uses a powershell .ps1 build script 
+ - Windows now uses a powershell .ps1 build script
+ - Add support for FreeBSD x64
+ - Add support for OpenBSD x64
 
 ## 0.0.8 - 2023-11-01
 

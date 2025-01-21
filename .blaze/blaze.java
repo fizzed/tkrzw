@@ -118,7 +118,7 @@ public class blaze extends PublicBlaze {
         new Target("openbsd", "x64")
             .setTags("build")
             .setHost("bmh-build-x64-openbsd76-1"),
-        
+
         //
         // MacOS
         //
