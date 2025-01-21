@@ -1,14 +1,15 @@
 Buildx Results
 --------------
 Cross platform tests use the Buildx project: https://github.com/fizzed/buildx
-Commit: ce46f7fa89f3239930954951b8eacb25adb3d2aa
-Date: 2025-01-20T20:11:07.961538Z[UTC]
+Commit: 70a1d330cfa8b02cef66b1355aa1ee963081f868
+Date: 2025-01-21T02:01:57.190299Z[UTC]
 
-linux-x64       (x64 Ubuntu 18.04, JDK 11 cross compiler)         success
-linux-arm64     (x64 Ubuntu 18.04, JDK 11 cross compiler)         success
-linux-armhf     (x64 Ubuntu 18.04, JDK 11 cross compiler)         success
-linux-armel     (x64 Ubuntu 18.04, JDK 11 cross compiler)         success
-linux-riscv64   (x64 Ubuntu 18.04, JDK 11 cross compiler)         success
-linux_musl-x64  (x64 Ubuntu 18.04, JDK 11 cross compiler)         success
-linux_musl-arm64(x64 Ubuntu 18.04, JDK 11 cross compiler)         success
+linux-x64                                                         success
+linux-arm64                                                       success
+linux-riscv64                                                     success
+linux_musl-x64                                                    success
+macos-x64                                                         success
+macos-arm64                                                       success
+windows-x64                                                       success
+windows-arm64                                                     success
 
