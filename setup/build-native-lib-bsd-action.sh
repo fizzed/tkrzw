@@ -7,7 +7,6 @@ PROJECT_DIR=$PWD
 
 BUILDOS=$1
 BUILDARCH=$2
-BUILDTARGET=$3
 
 mkdir -p target
 rsync -avrt --delete ./native/ ./target/
@@ -18,7 +17,7 @@ export JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
 
 # tkrzw dependency
 cd ./target/tkrzw
-./configure --host $BUILDTARGET --enable-zlib
+./configure --enable-zlib
 gmake -j4 libtkrzw.a libtkrzw.so
 
 # force static lib to be included in libjtkrzw
@@ -36,7 +35,7 @@ export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$TZDIR"
 # tkrzw-java
 cd ../tkrzw-java
 cp ../tkrzw/libtkrzw.a .
-./configure --host $BUILDTARGET
+./configure
 gmake -j4
 
 TARGET_LIB=libjtkrzw.so
