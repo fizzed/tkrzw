@@ -1,5 +1,12 @@
 # Tkrzw for Java
 
+## 0.0.9 - 2025-01-20
+
+ - Based on Tkrzw 1.0.32 and Tkrzw-Java 0.1.32
+ - Bump JNE v4.3.0
+ - Improved cross compiling and testing build system
+ - Windows now uses a powershell .ps1 build script 
+
 ## 0.0.8 - 2023-11-01
 
  - Based on Tkrzw 1.0.27 and Tkrzw-Java 0.1.30
