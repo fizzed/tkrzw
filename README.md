@@ -1,5 +1,4 @@
-Java distribution of Tkrzw & JNI libs by Fizzed
-------------------------------------------------------
+# Java distribution of Tkrzw & JNI libs by Fizzed
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.fizzed/tkrzw?color=blue&style=flat-square)](https://mvnrepository.com/artifact/com.fizzed/tkrzw)
 
